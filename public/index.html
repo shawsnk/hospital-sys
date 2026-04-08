@@ -452,13 +452,53 @@ select.fi{cursor:pointer}
   #page-keywords>.grid.g2{grid-template-columns:1fr}
 
   /* Reassign panel */
-  #reassign-panel>[style*="display:flex"]{flex-direction:column;gap:6px}
+  div[id^="reassign-"]>[style*="display:flex"]{flex-direction:column;gap:6px}
 
   /* Add user form */
   #add-user-form .grid.g2{grid-template-columns:1fr}
 
   /* Notification banners */
   .notice{font-size:11px;padding:8px 10px}
+}
+
+/* ── Toast notifications ── */
+#toast-container{
+  position:fixed;bottom:20px;right:20px;z-index:10000;
+  display:flex;flex-direction:column-reverse;gap:8px;pointer-events:none;
+}
+.toast{
+  pointer-events:auto;min-width:260px;max-width:380px;padding:10px 16px;
+  border-radius:8px;font-size:12.5px;font-weight:600;color:#fff;
+  box-shadow:0 4px 16px rgba(0,0,0,.18);display:flex;align-items:center;gap:8px;
+  animation:toast-in .3s ease;
+}
+.toast.out{animation:toast-out .3s ease forwards}
+.toast-success{background:#1A7A4A}
+.toast-error{background:#C0392B}
+.toast-info{background:#2E86C1}
+@keyframes toast-in{0%{opacity:0;transform:translateX(40px)}100%{opacity:1;transform:translateX(0)}}
+@keyframes toast-out{0%{opacity:1;transform:translateX(0)}100%{opacity:0;transform:translateX(40px)}}
+
+/* ── Queue card states ── */
+.queue-card-done{
+  opacity:.45;transition:all .5s ease;
+}
+.queue-card-done .card-body{display:none}
+.queue-card-done .card-header{background:var(--success-bg) !important;border-left-color:var(--success) !important}
+
+/* ── Modal overlay ── */
+.modal-overlay{
+  position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:9000;
+  display:flex;align-items:center;justify-content:center;animation:ai-fadein .2s ease;
+}
+.modal-box{
+  background:#fff;border-radius:12px;padding:24px;max-width:520px;width:90%;
+  max-height:80vh;overflow-y:auto;box-shadow:0 16px 48px rgba(0,0,0,.25);
+}
+.modal-box h3{font-size:15px;font-weight:700;color:var(--primary);margin-bottom:12px}
+.modal-close{
+  float:right;background:none;border:none;font-size:18px;cursor:pointer;
+  color:var(--text-m);padding:0 4px;
 }
 </style>
 </head>
@@ -656,7 +696,7 @@ select.fi{cursor:pointer}
         <div id="queue-own-notice" class="notice ni">👤 当前以 <strong id="queue-user-label">张小美</strong> 身份处理，回复记录将计入您的工作量统计。</div>
 
         <!-- Q1 urgent -->
-        <div class="card" style="border-left:4px solid var(--danger)">
+        <div class="card queue-card" id="queue-card-q1" style="border-left:4px solid var(--danger)">
           <div class="card-header" style="background:#FEF9F9">
             <span style="font-size:12px;font-weight:700;color:var(--danger)">🔴 高优先级</span>
             <span class="tag t-sensitive">急症求助</span><span class="tag t-xhs">小红书评论</span>
@@ -679,18 +719,17 @@ select.fi{cursor:pointer}
                 <div class="fh w">⚠ 急症消息：直接引导就诊，禁止追问病情。</div>
               </div>
               <div style="display:flex;flex-direction:column;gap:6px;padding-top:18px">
-                <button class="btn btn-d btn-sm">📤 发布并记录</button>
-                <button class="btn btn-o btn-sm" id="reassign-btn" onclick="showReassign()">↗ 转交他人</button>
-                <button class="btn btn-o btn-sm">✅ 标记已处理</button>
+                <button class="btn btn-d btn-sm" onclick="publishReply('q1',this)">📤 发布并记录</button>
+                <button class="btn btn-o btn-sm" onclick="toggleReassign('q1')">↗ 转交他人</button>
+                <button class="btn btn-o btn-sm" onclick="markDone('q1',this)">✅ 标记已处理</button>
               </div>
             </div>
-            <!-- Reassign panel -->
-            <div id="reassign-panel" style="display:none;margin-top:10px;background:#F8FAFC;border:1px solid var(--border);border-radius:7px;padding:12px">
+            <div id="reassign-q1" style="display:none;margin-top:10px;background:#F8FAFC;border:1px solid var(--border);border-radius:7px;padding:12px">
               <div style="font-size:12px;font-weight:600;margin-bottom:8px;color:var(--primary)">转交处理</div>
               <div style="display:flex;gap:8px;align-items:center">
-                <select class="fi" style="flex:1"><option>张小美（运营专员）</option><option>陈大明（运营专员）</option><option>李运营主管（管理员）</option></select>
+                <select class="fi" id="reassign-sel-q1" style="flex:1"><option>张小美（运营专员）</option><option>陈大明（运营专员）</option><option>李运营主管（管理员）</option></select>
                 <input class="fi" placeholder="转交备注（可选）" style="flex:2">
-                <button class="btn btn-a btn-sm">确认转交</button>
+                <button class="btn btn-a btn-sm" onclick="confirmReassign('q1',this)">确认转交</button>
               </div>
               <div class="fh">转交后此消息将从您的队列移除，计入对方工作量。</div>
             </div>
@@ -698,12 +737,12 @@ select.fi{cursor:pointer}
         </div>
 
         <!-- Q2 complaint -->
-        <div class="card" style="border-left:4px solid var(--warning);margin-top:12px">
+        <div class="card queue-card" id="queue-card-q2" style="border-left:4px solid var(--warning);margin-top:12px">
           <div class="card-header" style="background:#FFFBF5">
             <span style="font-size:12px;font-weight:700;color:var(--warning)">🟡 中优先级</span>
             <span class="tag t-sensitive">投诉纠纷</span><span class="tag t-xhs">小红书评论</span>
             <span style="margin-left:auto;font-size:11px;color:var(--text-m)">14:38 · 等待28分钟</span>
-            <span style="font-size:11px;color:var(--text-m);margin-left:8px">负责人：陈大明</span>
+            <span id="q2-assign" style="font-size:11px;color:var(--text-m);margin-left:8px">负责人：陈大明</span>
           </div>
           <div class="card-body">
             <div style="background:#FFF8F0;border:1px solid #F5CBA7;border-radius:7px;padding:9px 12px;font-size:12.5px;margin-bottom:10px">
@@ -720,9 +759,19 @@ select.fi{cursor:pointer}
                 <textarea class="fi" id="reply-q2" style="min-height:64px">非常抱歉给您带来不便和困扰！请您私信我们，留下联系方式，我们的患者服务部门会尽快与您取得联系。</textarea>
               </div>
               <div style="display:flex;flex-direction:column;gap:6px;padding-top:18px">
-                <button class="btn btn-a btn-sm">📤 发布并记录</button>
-                <button class="btn btn-o btn-sm">↗ 转交他人</button>
+                <button class="btn btn-a btn-sm" onclick="publishReply('q2',this)">📤 发布并记录</button>
+                <button class="btn btn-o btn-sm" onclick="toggleReassign('q2')">↗ 转交他人</button>
+                <button class="btn btn-o btn-sm" onclick="markDone('q2',this)">✅ 标记已处理</button>
               </div>
+            </div>
+            <div id="reassign-q2" style="display:none;margin-top:10px;background:#F8FAFC;border:1px solid var(--border);border-radius:7px;padding:12px">
+              <div style="font-size:12px;font-weight:600;margin-bottom:8px;color:var(--primary)">转交处理</div>
+              <div style="display:flex;gap:8px;align-items:center">
+                <select class="fi" id="reassign-sel-q2" style="flex:1"><option>张小美（运营专员）</option><option>陈大明（运营专员）</option><option>李运营主管（管理员）</option></select>
+                <input class="fi" placeholder="转交备注（可选）" style="flex:2">
+                <button class="btn btn-a btn-sm" onclick="confirmReassign('q2',this)">确认转交</button>
+              </div>
+              <div class="fh">转交后此消息将从您的队列移除，计入对方工作量。</div>
             </div>
           </div>
         </div>
@@ -1228,6 +1277,7 @@ select.fi{cursor:pointer}
     </div><!-- end .main -->
   </div><!-- end .body-wrap -->
 </div><!-- end #app -->
+<div id="toast-container"></div>
 
 <script>
 // ── User definitions ─────────────────────────────────────────────
@@ -1256,6 +1306,60 @@ const PAGE_META = {
 
 let currentUser = null;
 let currentPage = 'dashboard';
+
+// ── Toast System ──────────────────────────────────────────────────
+function showToast(msg, type='success', duration=3000) {
+  const c = document.getElementById('toast-container');
+  const t = document.createElement('div');
+  const icons = { success:'✅', error:'❌', info:'💡' };
+  t.className = 'toast toast-' + type;
+  t.innerHTML = (icons[type]||'') + ' ' + msg;
+  c.appendChild(t);
+  setTimeout(() => { t.classList.add('out'); setTimeout(() => t.remove(), 300); }, duration);
+}
+
+// ── Frontend Demo State ───────────────────────────────────────────
+const demoState = {
+  processedQueue: new Set(),
+  historyAnnotations: {},
+  faqList: [],
+  localFaqs: [],
+  faqDisabled: new Set(),
+  keywords: {
+    '诊断类': ['确诊','患有','是什么病','诊断'],
+    '疗效承诺': ['保证治愈','根治','100%','包好'],
+    '急症类': ['晕倒','急救','出血','骨折'],
+    '投诉类': ['投诉','差评','退款','赔偿']
+  },
+  whitelist: ['无痛','健康检查','体检'],
+  processedCount: 0,
+  historyData: [],
+  faqLoaded: false,
+  historyLoaded: false,
+};
+
+// ── Button Loading Utility ────────────────────────────────────────
+function setBtnLoading(btn, loading) {
+  if (loading) {
+    btn._origText = btn.innerHTML;
+    btn.innerHTML = '<span class="ai-spinner" style="width:14px;height:14px;border-width:2px;vertical-align:middle"></span> 处理中...';
+    btn.disabled = true; btn.style.opacity = '.6';
+  } else {
+    btn.innerHTML = btn._origText || btn.innerHTML;
+    btn.disabled = false; btn.style.opacity = '1';
+  }
+}
+
+// ── Modal Utility ─────────────────────────────────────────────────
+function showModal(title, bodyHtml) {
+  const existing = document.querySelector('.modal-overlay');
+  if (existing) existing.remove();
+  const overlay = document.createElement('div');
+  overlay.className = 'modal-overlay';
+  overlay.onclick = (e) => { if (e.target === overlay) overlay.remove(); };
+  overlay.innerHTML = '<div class="modal-box"><button class="modal-close" onclick="this.closest(\'.modal-overlay\').remove()">✕</button><h3>' + title + '</h3><div>' + bodyHtml + '</div></div>';
+  document.body.appendChild(overlay);
+}
 
 function doLogin() {
   const sel = document.getElementById('login-user').value;
@@ -1408,18 +1512,9 @@ function showPermPanel(user) {
   panel.scrollIntoView({ behavior:'smooth' });
 }
 
-function showReassign() {
-  const p = document.getElementById('reassign-panel');
-  p.style.display = p.style.display === 'none' ? 'block' : 'none';
-}
-
 // Wire up buttons that need JS
 document.getElementById('add-user-btn')?.addEventListener('click', () => {
   const f = document.getElementById('add-user-form');
-  f.style.display = f.style.display === 'none' ? 'block' : 'none';
-});
-document.getElementById('faq-edit-btn')?.addEventListener('click', () => {
-  const f = document.getElementById('faq-edit-form');
   f.style.display = f.style.display === 'none' ? 'block' : 'none';
 });
 
@@ -1427,6 +1522,18 @@ document.getElementById('faq-edit-btn')?.addEventListener('click', () => {
 async function aiSearch(query) {
   const start = performance.now();
   const resp = await fetch('/api/faq/search', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ query })
+  });
+  const data = await resp.json();
+  data._elapsed = Math.round(performance.now() - start);
+  return data;
+}
+
+async function aiReply(query) {
+  const start = performance.now();
+  const resp = await fetch('/api/ai/reply', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ query })
@@ -1532,34 +1639,37 @@ document.getElementById('dash-ai-search')?.addEventListener('keydown', (e) => {
   if (e.key === 'Enter') doDashSearch();
 });
 
-// ── Queue: AI suggestion for each message card ──
+// ── Queue: AI-powered suggestion for each message card ──
 async function loadQueueSuggestions() {
   document.querySelectorAll('.ai-suggest-block[data-query]').forEach(async (block) => {
     const query = block.dataset.query;
-    const queueId = block.id; // e.g. ai-suggest-q1
+    const queueId = block.id;
     const replyId = queueId.replace('ai-suggest-', 'reply-');
-    block.innerHTML = '<div class="ai-loading"><span class="ai-spinner"></span>正在匹配推荐回复...</div>';
+    block.innerHTML = '<div class="ai-loading"><span class="ai-spinner"></span>AI 正在分析并生成推荐回复...</div>';
     try {
-      const data = await aiSearch(query);
-      if (data.results && data.results.length > 0) {
-        const top = data.results[0];
-        const sim = (top.similarity || 0).toFixed(2);
-        const cls = scoreClass(top.similarity);
+      const data = await aiReply(query);
+      if (data.answer) {
+        const sim = (data.confidence || 0).toFixed(2);
+        const cls = scoreClass(data.confidence);
         const routeHtml = routeLabel(data.routing);
+        const sourceLabel = data.source === 'faq'
+          ? '<span class="tag t-auto" style="font-size:10px">FAQ 精准匹配</span>'
+          : '<span class="tag t-comfort" style="font-size:10px">AI 智能生成</span>';
         block.innerHTML = `
-          <div class="ai-suggest-header">🤖 AI 推荐回复</div>
-          <div class="ai-suggest-content">${truncate(top.answer || '', 200)}</div>
+          <div class="ai-suggest-header">🤖 AI 推荐回复 ${sourceLabel}</div>
+          <div class="ai-suggest-content">${data.answer}</div>
           <div class="ai-suggest-meta">
             <div class="ai-score ${cls}" style="width:38px;height:38px;font-size:14px;border-radius:8px">
               ${sim}<small style="font-size:8px">置信</small>
             </div>
-            ${top.category ? `<span class="tag t-normal">${top.category}</span>` : ''}
             ${routeHtml}
-            <span style="color:var(--text-m);font-size:10.5px">匹配问题：${truncate(top.question || '', 30)}</span>
+            <span style="color:var(--text-m);font-size:10.5px">耗时 ${data._elapsed || 0}ms</span>
             <button class="ai-suggest-adopt" onclick="adoptSuggestion('${replyId}', this)">采用</button>
           </div>`;
+      } else if (data.source === 'manual_only') {
+        block.innerHTML = '<div class="ai-suggest-header">🤖 AI 分析结果</div><div class="ai-no-match" style="color:var(--danger);font-style:normal;font-weight:600">⚠ 该问题敏感等级较高，AI 不生成建议，请人工谨慎回复</div>';
       } else {
-        block.innerHTML = '<div class="ai-suggest-header">🤖 AI 推荐回复</div><div class="ai-no-match">未找到匹配 FAQ，请人工回复</div>';
+        block.innerHTML = '<div class="ai-suggest-header">🤖 AI 推荐回复</div><div class="ai-no-match">未找到匹配内容，请人工回复</div>';
       }
     } catch (e) {
       block.innerHTML = '<div class="ai-suggest-header">🤖 AI 推荐回复</div><div class="ai-no-match">推荐服务暂不可用</div>';
@@ -1579,12 +1689,442 @@ function adoptSuggestion(replyId, btn) {
   }
 }
 
-// Auto-load queue suggestions when page is shown
+// ── Queue: publish / reassign / mark done ──
+function updateQueueBadge() {
+  const remaining = document.querySelectorAll('.queue-card:not(.queue-card-done)').length;
+  const badge = document.querySelector('#nav-queue .badge');
+  if (badge) badge.textContent = remaining;
+}
+
+function publishReply(qId, btn) {
+  const textarea = document.getElementById('reply-' + qId);
+  if (!textarea || !textarea.value.trim()) { showToast('请先填写回复内容', 'error'); return; }
+  setBtnLoading(btn, true);
+  setTimeout(() => {
+    const card = document.getElementById('queue-card-' + qId);
+    card.classList.add('queue-card-done');
+    demoState.processedQueue.add(qId);
+    demoState.processedCount++;
+    updateQueueBadge();
+    showToast('回复已发布并记入工作量');
+  }, 800);
+}
+
+function markDone(qId, btn) {
+  setBtnLoading(btn, true);
+  setTimeout(() => {
+    const card = document.getElementById('queue-card-' + qId);
+    card.classList.add('queue-card-done');
+    demoState.processedQueue.add(qId);
+    updateQueueBadge();
+    showToast('已标记为已处理');
+  }, 500);
+}
+
+function toggleReassign(qId) {
+  const p = document.getElementById('reassign-' + qId);
+  p.style.display = p.style.display === 'none' ? 'block' : 'none';
+}
+
+function confirmReassign(qId, btn) {
+  const sel = document.getElementById('reassign-sel-' + qId);
+  const name = sel.value.split('（')[0];
+  setBtnLoading(btn, true);
+  setTimeout(() => {
+    const assign = document.getElementById(qId + '-assign');
+    if (assign) assign.textContent = '负责人：' + name;
+    document.getElementById('reassign-' + qId).style.display = 'none';
+    showToast('已转交给 ' + name);
+    setBtnLoading(btn, false);
+  }, 600);
+}
+
+// ── Page lifecycle hooks ──
 const origShowPage = showPage;
 showPage = function(id) {
   origShowPage(id);
   if (id === 'queue') loadQueueSuggestions();
+  if (id === 'faq') loadFaqPage();
+  if (id === 'history') loadHistoryPage();
 };
+
+// ══════════════════════════════════════════════════════════════════
+// ── FAQ Page: Load real data + CRUD ──
+// ══════════════════════════════════════════════════════════════════
+async function loadFaqPage() {
+  if (demoState.faqLoaded) { renderFaqTable(); return; }
+  const tbody = document.querySelector('#page-faq .tbl tbody');
+  if (tbody) tbody.innerHTML = '<tr><td colspan="8"><div class="ai-loading"><span class="ai-spinner"></span>加载 FAQ 数据...</div></td></tr>';
+  try {
+    const resp = await fetch('/api/faq/search');
+    const data = await resp.json();
+    demoState.faqList = (data.faqs || []).map((f, i) => ({ ...f, _idx: i }));
+    demoState.faqLoaded = true;
+    renderFaqTable();
+  } catch (e) {
+    if (tbody) tbody.innerHTML = '<tr><td colspan="8" style="color:var(--danger)">加载失败，请刷新重试</td></tr>';
+  }
+}
+
+function renderFaqTable() {
+  const tbody = document.querySelector('#page-faq .tbl tbody');
+  if (!tbody) return;
+  const allFaqs = [...demoState.faqList, ...demoState.localFaqs];
+  if (allFaqs.length === 0) { tbody.innerHTML = '<tr><td colspan="8" style="color:var(--text-m)">暂无 FAQ 数据</td></tr>'; return; }
+  const isOp = currentUser && currentUser.role === '运营专员';
+  const operators = ['张小美','陈大明','李运营主管'];
+  const avClasses = ['av-2','av-3','av-1'];
+  const avLetters = ['张','陈','李'];
+  tbody.innerHTML = allFaqs.map((f, idx) => {
+    const fid = f.id || ('LOCAL_' + idx);
+    const disabled = demoState.faqDisabled.has(fid);
+    const opIdx = idx % 3;
+    const sensLabels = ['0·安全','1·需审核','2·转人工'];
+    const sensClasses = ['t-auto','t-human','t-sensitive'];
+    const sens = f.sensitivity || 0;
+    return `<tr style="${disabled ? 'opacity:.45' : ''}">
+      <td style="font-family:monospace;font-size:11px;color:var(--text-m)">${fid.substring(0,8)}</td>
+      <td><div style="font-size:12.5px">${f.question || ''}</div><div style="font-size:10.5px;color:var(--text-m)">${f.synonyms ? '同义：'+truncate(f.synonyms,30) : ''}</div></td>
+      <td><span class="tag t-normal">${f.category || '未分类'}</span></td>
+      <td><span class="tag ${sensClasses[sens] || 'tag t-auto'}">${sensLabels[sens] || sens}</span></td>
+      <td><span style="color:${disabled ? 'var(--text-m)' : 'var(--success)'};font-weight:600;font-size:11.5px">${disabled ? '○ 已停用' : '● 启用'}</span></td>
+      <td><strong>${f.hit_count || 0}</strong></td>
+      <td><div style="display:flex;align-items:center;gap:5px"><div class="user-avatar ${avClasses[opIdx]}" style="width:18px;height:18px;font-size:9px">${avLetters[opIdx]}</div><span style="font-size:11px">${operators[opIdx]}</span></div></td>
+      <td><div style="display:flex;gap:4px">
+        ${!isOp ? `<button class="btn btn-o btn-xs" onclick="editFaq('${fid}')">编辑</button><button class="btn btn-o btn-xs" onclick="toggleFaq('${fid}')">${disabled ? '启用' : '停用'}</button>` : ''}
+      </div></td>
+    </tr>`;
+  }).join('');
+}
+
+function toggleFaq(fid) {
+  if (demoState.faqDisabled.has(fid)) {
+    demoState.faqDisabled.delete(fid);
+    showToast('FAQ 已启用');
+  } else {
+    demoState.faqDisabled.add(fid);
+    showToast('FAQ 已停用');
+  }
+  renderFaqTable();
+}
+
+function editFaq(fid) {
+  const all = [...demoState.faqList, ...demoState.localFaqs];
+  const faq = all.find(f => (f.id || '').startsWith(fid.substring(0,8)));
+  const form = document.getElementById('faq-edit-form');
+  if (!form || !faq) return;
+  form.style.display = 'block';
+  form.scrollIntoView({ behavior:'smooth' });
+  const inputs = form.querySelectorAll('input.fi, textarea.fi, select.fi');
+  if (inputs[0]) inputs[0].value = faq.question || '';
+  if (inputs[1]) inputs[1].value = (faq.synonyms || '').replace(/;/g, '\n');
+  if (inputs[3]) inputs[3].value = faq.answer || '';
+  form.querySelector('div[style*="font-size:14px"]').textContent = '编辑 FAQ · ' + fid.substring(0,8);
+}
+
+// Hook up "新增 FAQ" and "保存" buttons
+document.getElementById('faq-add-btn')?.addEventListener('click', () => {
+  if (currentUser && currentUser.role === '运营专员') { showToast('权限不足', 'error'); return; }
+  const form = document.getElementById('faq-edit-form');
+  form.style.display = 'block';
+  form.scrollIntoView({ behavior:'smooth' });
+  const inputs = form.querySelectorAll('input.fi, textarea.fi');
+  inputs.forEach(i => i.value = '');
+  form.querySelector('div[style*="font-size:14px"]').textContent = '新增 FAQ';
+});
+
+// "保存并触发向量化" button
+document.querySelector('#faq-edit-form .btn-p')?.addEventListener('click', () => {
+  const form = document.getElementById('faq-edit-form');
+  const inputs = form.querySelectorAll('input.fi, textarea.fi, select.fi');
+  const question = inputs[0]?.value.trim();
+  const answer = inputs[3]?.value.trim();
+  if (!question || !answer) { showToast('标准问题和标准回复为必填项', 'error'); return; }
+  demoState.localFaqs.push({
+    id: 'LOCAL_' + Date.now(),
+    question,
+    answer,
+    category: inputs[2]?.value || '未分类',
+    synonyms: (inputs[1]?.value || '').replace(/\n/g, ';'),
+    sensitivity: parseInt(inputs[2]?.value) || 0,
+    hit_count: 0,
+  });
+  form.style.display = 'none';
+  renderFaqTable();
+  showToast('FAQ 已保存并触发向量化');
+});
+
+// ══════════════════════════════════════════════════════════════════
+// ── History Page: Generate from FAQ data + filter ──
+// ══════════════════════════════════════════════════════════════════
+function generateHistoryData(faqs) {
+  const methods = ['自动回复','自动回复','自动回复','人工回复','安抚模板'];
+  const methodCls = { '自动回复':'t-auto', '人工回复':'t-human', '安抚模板':'t-comfort' };
+  const operators = [
+    { name:'张小美', av:'av-1', letter:'张' },
+    { name:'陈大明', av:'av-2', letter:'陈' },
+    { name:'李运营主管', av:'av-3', letter:'李' },
+  ];
+  const annots = ['correct','correct','correct','wrong','none','none'];
+  const hours = [];
+  for (let h = 8; h <= 17; h++) for (let m = 0; m < 60; m += Math.floor(Math.random()*15+5)) hours.push(`${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}`);
+
+  const rows = [];
+  const useFaqs = faqs.length > 0 ? faqs : demoState.faqList;
+  const count = Math.min(useFaqs.length, 30);
+  for (let i = 0; i < count; i++) {
+    const f = useFaqs[i];
+    const method = methods[Math.floor(Math.random() * methods.length)];
+    const op = operators[Math.floor(Math.random() * operators.length)];
+    const conf = method === '自动回复' ? (0.6 + Math.random() * 0.38).toFixed(2) : null;
+    const annot = method === '自动回复' ? annots[Math.floor(Math.random() * annots.length)] : 'none';
+    rows.push({
+      id: 'h_' + i,
+      time: hours[Math.floor(Math.random() * hours.length)] || '14:30',
+      question: f.question || '用户问题',
+      method,
+      methodCls: methodCls[method] || 't-normal',
+      operator: op,
+      confidence: conf,
+      answer: truncate(f.answer || '', 40),
+      annotation: annot,
+    });
+  }
+  rows.sort((a, b) => b.time.localeCompare(a.time));
+  return rows;
+}
+
+async function loadHistoryPage() {
+  if (demoState.historyLoaded) { renderHistoryTable(); return; }
+  // Use FAQ data to generate realistic history
+  if (!demoState.faqLoaded) {
+    try {
+      const resp = await fetch('/api/faq/search');
+      const data = await resp.json();
+      demoState.faqList = (data.faqs || []).map((f, i) => ({ ...f, _idx: i }));
+      demoState.faqLoaded = true;
+    } catch(e) {}
+  }
+  demoState.historyData = generateHistoryData(demoState.faqList);
+  demoState.historyLoaded = true;
+  renderHistoryTable();
+}
+
+function renderHistoryTable() {
+  const tbody = document.querySelector('#page-history .tbl tbody');
+  if (!tbody) return;
+  // Read filters
+  const page = document.getElementById('page-history');
+  const selects = page.querySelectorAll('select.fi');
+  const methodFilter = selects[1]?.value || '全部';
+  const opFilter = selects[2]?.value || '全部';
+  const annotFilter = selects[3]?.value || '全部';
+  const isOp = currentUser && currentUser.role === '运营专员';
+
+  let rows = demoState.historyData;
+  if (methodFilter !== '全部') rows = rows.filter(r => r.method === methodFilter);
+  if (opFilter !== '全部' && !isOp) rows = rows.filter(r => r.operator.name === opFilter);
+  if (isOp && currentUser) rows = rows.filter(r => r.operator.name === currentUser.name);
+  if (annotFilter === '未标注') rows = rows.filter(r => r.annotation === 'none');
+  else if (annotFilter === '正确') rows = rows.filter(r => r.annotation === 'correct' || demoState.historyAnnotations[r.id] === 'correct');
+  else if (annotFilter === '错误') rows = rows.filter(r => r.annotation === 'wrong' || demoState.historyAnnotations[r.id] === 'wrong');
+
+  // Update count
+  const countEl = page.querySelector('.card-header span[style*="margin-left:auto"]');
+  if (countEl) countEl.textContent = `共 ${rows.length} 条 · 今日`;
+
+  tbody.innerHTML = rows.map(r => {
+    const annot = demoState.historyAnnotations[r.id] || r.annotation;
+    const annotHtml = annot === 'correct'
+      ? '<span class="tag t-ok">✓ 正确</span>'
+      : annot === 'wrong'
+        ? '<span class="tag t-wrong">✗ 错误</span>'
+        : `<div style="display:flex;gap:3px"><button class="btn btn-s btn-xs" onclick="annotateHistory('${r.id}','correct',this)">✓</button><button class="btn btn-d btn-xs" onclick="annotateHistory('${r.id}','wrong',this)">✗</button></div>`;
+    return `<tr>
+      <td style="white-space:nowrap;font-size:11px;color:var(--text-m)">${r.time}</td>
+      <td style="max-width:160px;font-size:11.5px">${r.question}</td>
+      <td><span class="tag ${r.methodCls}">${r.method}</span></td>
+      <td><div style="display:flex;align-items:center;gap:5px"><div class="user-avatar ${r.operator.av}" style="width:20px;height:20px;font-size:10px">${r.operator.letter}</div><span style="font-size:11.5px">${r.operator.name}</span></div></td>
+      <td>${r.confidence ? `<span style="color:${parseFloat(r.confidence) >= 0.82 ? 'var(--success)' : 'var(--warning)'};font-weight:700">${r.confidence}</span>` : '<span style="color:var(--text-m)">—</span>'}</td>
+      <td style="font-size:11.5px;max-width:180px">${r.answer}</td>
+      <td>${annotHtml}</td>
+      <td><button class="btn btn-o btn-xs" onclick="showHistoryDetail('${r.id}')">详情</button></td>
+    </tr>`;
+  }).join('');
+}
+
+function annotateHistory(id, value) {
+  demoState.historyAnnotations[id] = value;
+  showToast(value === 'correct' ? '已标注为正确' : '已标注为错误');
+  renderHistoryTable();
+}
+
+function showHistoryDetail(id) {
+  const r = demoState.historyData.find(h => h.id === id);
+  if (!r) return;
+  const annot = demoState.historyAnnotations[r.id] || r.annotation;
+  const annotText = annot === 'correct' ? '✅ 已标注正确' : annot === 'wrong' ? '❌ 已标注错误' : '未标注';
+  showModal('回复详情', `
+    <div style="font-size:12.5px;line-height:1.8">
+      <div style="margin-bottom:8px"><strong>用户消息：</strong>${r.question}</div>
+      <div style="margin-bottom:8px"><strong>处理方式：</strong><span class="tag ${r.methodCls}">${r.method}</span></div>
+      <div style="margin-bottom:8px"><strong>处理人：</strong>${r.operator.name}</div>
+      <div style="margin-bottom:8px"><strong>置信度：</strong>${r.confidence || '—'}</div>
+      <div style="margin-bottom:8px"><strong>回复内容：</strong><div style="background:#F5F8FB;padding:8px 12px;border-radius:6px;margin-top:4px">${r.answer}</div></div>
+      <div><strong>标注状态：</strong>${annotText}</div>
+    </div>
+  `);
+}
+
+// Wire up history filter button
+document.querySelector('#page-history .btn-p')?.addEventListener('click', () => {
+  renderHistoryTable();
+  showToast('已刷新筛选结果', 'info');
+});
+
+// ══════════════════════════════════════════════════════════════════
+// ── Import Page: File upload simulation ──
+// ══════════════════════════════════════════════════════════════════
+(function initImport() {
+  const content = document.getElementById('import-content');
+  if (!content) return;
+  // Add hidden file input
+  const fileInput = document.createElement('input');
+  fileInput.type = 'file'; fileInput.accept = '.xlsx,.xls'; fileInput.style.display = 'none';
+  fileInput.id = 'import-file-input';
+  content.appendChild(fileInput);
+
+  const dropZone = content.querySelector('div[style*="border:2px dashed"]');
+  const selectBtn = dropZone?.querySelector('.btn');
+  const startBtn = content.querySelector('.btn-p[style*="width:100%"]');
+
+  if (selectBtn) selectBtn.addEventListener('click', () => fileInput.click());
+  if (dropZone) {
+    dropZone.addEventListener('click', () => fileInput.click());
+    dropZone.addEventListener('dragover', (e) => { e.preventDefault(); dropZone.style.borderColor = 'var(--accent)'; dropZone.style.background = '#EBF5FB'; });
+    dropZone.addEventListener('dragleave', () => { dropZone.style.borderColor = '#B0C4D8'; dropZone.style.background = '#F8FAFC'; });
+    dropZone.addEventListener('drop', (e) => { e.preventDefault(); dropZone.style.borderColor = '#B0C4D8'; if (e.dataTransfer.files[0]) showFileName(e.dataTransfer.files[0].name); });
+  }
+  fileInput.addEventListener('change', () => { if (fileInput.files[0]) showFileName(fileInput.files[0].name); });
+
+  function showFileName(name) {
+    if (dropZone) dropZone.innerHTML = `<div style="font-size:26px;margin-bottom:6px">📄</div><div style="font-size:13px;font-weight:600;color:var(--success)">已选择: ${name}</div><div style="font-size:11px;color:var(--text-m);margin-top:3px">点击更换文件</div>`;
+  }
+
+  if (startBtn) startBtn.addEventListener('click', () => {
+    if (!fileInput.files[0] && !dropZone.textContent.includes('已选择')) { showToast('请先选择文件', 'error'); return; }
+    setBtnLoading(startBtn, true);
+    startBtn.insertAdjacentHTML('afterend', '<div id="import-progress" style="margin-top:10px"><div style="height:6px;background:#E8EDF2;border-radius:3px;overflow:hidden"><div id="import-bar" style="height:100%;width:0;background:var(--accent);border-radius:3px;transition:width 2s ease"></div></div><div style="font-size:11px;color:var(--text-m);margin-top:4px" id="import-status">正在解析文件...</div></div>');
+    requestAnimationFrame(() => { document.getElementById('import-bar').style.width = '100%'; });
+    setTimeout(() => {
+      document.getElementById('import-status').innerHTML = '<span style="color:var(--success);font-weight:600">✅ 导入完成！成功导入 24 条 FAQ，跳过 2 条重复，0 条错误</span>';
+      setBtnLoading(startBtn, false);
+      showToast('批量导入完成，24 条 FAQ 已入库');
+    }, 2500);
+  });
+})();
+
+// ══════════════════════════════════════════════════════════════════
+// ── Keywords Page: Tab switch + add/remove ──
+// ══════════════════════════════════════════════════════════════════
+(function initKeywords() {
+  const page = document.getElementById('page-keywords');
+  if (!page) return;
+  const tabs = page.querySelectorAll('.tabs .tab');
+  const categories = Object.keys(demoState.keywords);
+  let currentKwCat = categories[0] || '诊断类';
+
+  function renderKwChips() {
+    const container = page.querySelector('.tabs')?.nextElementSibling;
+    if (!container) return;
+    const words = demoState.keywords[currentKwCat] || [];
+    container.innerHTML = words.map(w =>
+      `<span style="background:var(--danger-bg);color:var(--danger);padding:2px 9px;border-radius:20px;font-size:11.5px;font-weight:600;cursor:pointer" onclick="removeKeyword('${currentKwCat}','${w}',this)">${w} ×</span>`
+    ).join('') || '<span style="color:var(--text-m);font-size:11.5px">该分类暂无敏感词</span>';
+  }
+
+  tabs.forEach((tab, i) => {
+    tab.addEventListener('click', () => {
+      tabs.forEach(t => t.classList.remove('active'));
+      tab.classList.add('active');
+      currentKwCat = categories[i] || tab.textContent.trim();
+      renderKwChips();
+    });
+  });
+
+  // Fix the kw-add-form CSS bug and wire up
+  const addForm = document.getElementById('kw-add-form');
+  if (addForm) {
+    addForm.style.display = 'none';
+    const addBtn = document.getElementById('kw-add-btn');
+    if (addBtn) addBtn.addEventListener('click', () => {
+      addForm.style.display = addForm.style.display === 'none' ? 'flex' : 'none';
+    });
+    const submitBtn = addForm.querySelector('.btn');
+    const kwInput = addForm.querySelector('input.fi');
+    if (submitBtn && kwInput) submitBtn.addEventListener('click', () => {
+      const word = kwInput.value.trim();
+      if (!word) { showToast('请输入敏感词', 'error'); return; }
+      const cat = addForm.querySelector('select.fi')?.value || currentKwCat;
+      if (!demoState.keywords[cat]) demoState.keywords[cat] = [];
+      demoState.keywords[cat].push(word);
+      kwInput.value = '';
+      if (cat === currentKwCat) renderKwChips();
+      showToast('敏感词已添加：' + word);
+    });
+  }
+
+  // Store renderKwChips globally so removeKeyword can call it
+  window._renderKwChips = renderKwChips;
+  renderKwChips();
+})();
+
+function removeKeyword(cat, word) {
+  const arr = demoState.keywords[cat];
+  if (arr) {
+    const idx = arr.indexOf(word);
+    if (idx >= 0) arr.splice(idx, 1);
+  }
+  showToast('已删除：' + word);
+  if (window._renderKwChips) window._renderKwChips();
+}
+
+// ══════════════════════════════════════════════════════════════════
+// ── Settings Page: Save + Day toggle ──
+// ══════════════════════════════════════════════════════════════════
+(function initSettings() {
+  const saveBtn = document.getElementById('settings-save-btn');
+  if (saveBtn) saveBtn.addEventListener('click', () => {
+    setBtnLoading(saveBtn, true);
+    setTimeout(() => {
+      setBtnLoading(saveBtn, false);
+      showToast('系统设置已保存');
+    }, 600);
+  });
+
+  // Day selector buttons
+  document.querySelectorAll('#page-settings .btn-o.btn-sm, #page-settings .btn-p.btn-sm').forEach(btn => {
+    if (['一','二','三','四','五','六','日'].some(d => btn.textContent.trim() === d)) {
+      btn.addEventListener('click', () => {
+        if (btn.classList.contains('btn-p')) { btn.classList.remove('btn-p'); btn.classList.add('btn-o'); }
+        else { btn.classList.remove('btn-o'); btn.classList.add('btn-p'); }
+      });
+    }
+  });
+
+  // Cancel button
+  const cancelBtn = document.querySelector('#page-settings .btn-o:not(.btn-sm)');
+  if (cancelBtn && cancelBtn.textContent.includes('放弃')) {
+    cancelBtn.addEventListener('click', () => showToast('已放弃修改', 'info'));
+  }
+})();
+
+// ══════════════════════════════════════════════════════════════════
+// ── History export button ──
+// ══════════════════════════════════════════════════════════════════
+document.querySelector('#page-history .btn-o.btn-sm')?.addEventListener('click', () => {
+  showToast('导出文件已生成，正在下载...', 'info');
+});
 </script>
 </body>
 </html>
