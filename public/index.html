@@ -349,6 +349,117 @@ select.fi{cursor:pointer}
 }
 .ai-suggest-adopt:hover{background:#2171A0}
 .ai-no-match{font-size:11.5px;color:var(--text-m);padding:8px 0;font-style:italic}
+
+/* ── Mobile responsive ── */
+@media(max-width:768px){
+  /* Login */
+  .login-card{width:calc(100vw - 32px);max-width:380px;padding:28px 24px}
+
+  /* Hide sidebar, use page-nav as primary navigation */
+  .sidebar{display:none}
+  .body-wrap{flex-direction:column}
+
+  /* Topbar compact */
+  .topbar{padding:0 12px;height:48px;gap:8px}
+  .topbar-brand{font-size:12px}
+  .topbar-sep{display:none}
+  .topbar-title{font-size:11px}
+  .topbar-right{gap:8px}
+  .user-chip-name{font-size:11px}
+  .user-chip-role{display:none}
+  .status-pill{display:none}
+
+  /* Page nav becomes scrollable tab bar */
+  .page-nav{
+    display:flex !important;overflow-x:auto;white-space:nowrap;
+    padding:6px 10px;gap:4px;-webkit-overflow-scrolling:touch;
+    scrollbar-width:none;
+  }
+  .page-nav::-webkit-scrollbar{display:none}
+  .pnb{flex-shrink:0;font-size:10.5px;padding:4px 10px}
+  .pnb.locked{display:none}
+
+  /* Main content */
+  .main{overflow-y:auto}
+  .page{padding:12px 14px}
+
+  /* Page header */
+  .ph{flex-direction:column;gap:6px}
+  .ph-name{font-size:15px}
+  .ph-badge{align-self:flex-start}
+
+  /* Stat grids */
+  .grid.g4{grid-template-columns:repeat(2,1fr);gap:8px}
+  .grid.g3{grid-template-columns:1fr;gap:10px}
+  .grid.g2{grid-template-columns:1fr;gap:10px}
+  .stat{padding:10px 12px}
+  .stat-value{font-size:20px}
+
+  /* Cards */
+  .card-header{padding:10px 12px;flex-wrap:wrap;gap:6px}
+  .card-body{padding:10px 12px}
+
+  /* Tables scroll horizontally */
+  .tbl{display:block;overflow-x:auto;white-space:nowrap}
+  .tbl th,.tbl td{padding:7px 10px;font-size:11px}
+
+  /* Dashboard team workload mini chart */
+  .card-body>[style*="display:flex"][style*="gap:24px"]{flex-direction:column;gap:12px}
+  .card-body>[style*="display:flex"][style*="gap:24px"]>[style*="border-left"]{
+    border-left:none !important;padding-left:0 !important;border-top:1px solid var(--border);padding-top:12px;
+  }
+
+  /* Queue message cards */
+  .card-body>[style*="display:flex"][style*="gap:8px"]{flex-direction:column}
+
+  /* FAQ search bar */
+  #page-faq>[style*="display:flex"][style*="gap:10px"]{flex-wrap:wrap}
+  #page-faq>[style*="display:flex"][style*="gap:10px"]>[style*="flex:2"]{flex:1 1 100% !important;min-width:100%}
+
+  /* Filter bars */
+  .card-body>[style*="display:flex"][style*="flex-wrap:wrap"]{flex-direction:column;gap:8px}
+
+  /* Workload summary cards */
+  #wl-summary{grid-template-columns:1fr !important}
+
+  /* Users - role explanation cards */
+  .card-body>[style*="display:flex"][style*="gap:16px"]{flex-direction:column}
+
+  /* Settings grid */
+  #page-settings>.grid.g2{grid-template-columns:1fr}
+
+  /* Permission panel */
+  .card-body>.grid.g2[style*="gap:0"]{grid-template-columns:1fr}
+  .card-body>.grid.g2[style*="gap:0"]>[style*="border-left"]{
+    border-left:none !important;padding-left:0 !important;border-top:1px solid var(--border);padding-top:12px;margin-top:8px;
+  }
+
+  /* AI search panel */
+  .ai-search-panel{margin:0 -2px}
+  .ai-result-item{flex-direction:column;gap:8px}
+  .ai-score{width:auto;min-width:60px;padding:6px 10px;align-self:flex-start}
+  .ai-score small{display:inline;margin-left:4px}
+
+  /* Buttons row in queue */
+  .card-body>[style*="display:flex"]>[style*="flex-direction:column"][style*="gap:6px"]{
+    flex-direction:row !important;flex-wrap:wrap;
+  }
+
+  /* Import dropzone */
+  #import-content>.grid.g2{grid-template-columns:1fr}
+
+  /* Sensitive words */
+  #page-keywords>.grid.g2{grid-template-columns:1fr}
+
+  /* Reassign panel */
+  #reassign-panel>[style*="display:flex"]{flex-direction:column;gap:6px}
+
+  /* Add user form */
+  #add-user-form .grid.g2{grid-template-columns:1fr}
+
+  /* Notification banners */
+  .notice{font-size:11px;padding:8px 10px}
+}
 </style>
 </head>
 <body>
