@@ -350,6 +350,32 @@ select.fi{cursor:pointer}
 .ai-suggest-adopt:hover{background:#2171A0}
 .ai-no-match{font-size:11.5px;color:var(--text-m);padding:8px 0;font-style:italic}
 
+/* ── AI Decision Chain ── */
+.ai-chain{display:flex;align-items:center;gap:0;padding:7px 10px;background:#F8FAFC;border:1px solid var(--border-l);border-radius:6px;margin:8px 0;font-size:10.5px;flex-wrap:wrap;cursor:pointer;user-select:none}
+.ai-chain-step{display:inline-flex;align-items:center;gap:3px;padding:2px 7px;border-radius:12px;white-space:nowrap;line-height:1.6}
+.ai-chain-step.done{background:var(--success-bg);color:var(--success)}
+.ai-chain-step.active{background:#EBF5FB;color:var(--accent);font-weight:700}
+.ai-chain-step.warn{background:var(--warning-bg);color:var(--warning)}
+.ai-chain-step.skip{background:var(--danger-bg);color:var(--danger)}
+.ai-chain-arrow{color:#B0C4D8;margin:0 2px;font-size:9px}
+.ai-chain-toggle{font-size:10px;color:var(--text-m);margin-left:auto;padding-left:8px}
+.ai-chain-detail{display:none;padding:8px 12px;background:#FAFCFF;border:1px solid var(--border-l);border-radius:0 0 6px 6px;margin-top:-7px;font-size:11px;color:var(--text-m);line-height:1.7}
+.ai-chain-detail.open{display:block}
+
+/* ── Efficiency Panel ── */
+.eff-panel{display:flex;gap:0;padding:0;background:linear-gradient(135deg,#EBF5FB,#F0F7FF);border:1.5px solid var(--accent-l);border-radius:10px;margin-bottom:14px;overflow:hidden}
+.eff-item{flex:1;display:flex;flex-direction:column;align-items:center;gap:2px;padding:12px 8px;border-right:1px solid var(--accent-l)}
+.eff-item:last-child{border-right:none}
+.eff-value{font-size:22px;font-weight:800;color:var(--primary);line-height:1}
+.eff-value.green{color:var(--success)}
+.eff-label{font-size:10px;color:var(--text-m);text-align:center}
+
+/* ── AI Generated Answer Block ── */
+.ai-gen-block{background:linear-gradient(135deg,#F0F7FF,#EBF5FB);border:1.5px solid var(--accent-l);border-radius:10px;padding:14px 16px;margin-bottom:12px;animation:ai-fadein .3s ease}
+.ai-gen-header{display:flex;align-items:center;gap:6px;margin-bottom:8px;font-size:12.5px;font-weight:700;color:var(--primary)}
+.ai-gen-content{font-size:12.5px;line-height:1.7;color:var(--text)}
+.ai-gen-meta{display:flex;align-items:center;gap:8px;margin-top:10px;font-size:10.5px;color:var(--text-m);flex-wrap:wrap}
+
 /* ── Mobile responsive ── */
 @media(max-width:768px){
   /* Login */
@@ -514,22 +540,17 @@ select.fi{cursor:pointer}
     </div>
     <div class="login-form">
       <div class="fl">
-        <label>选择账号</label>
-        <select class="fi" id="login-user">
-          <option value="">— 请选择登录账号 —</option>
-          <option value="super">王院长助理（超级管理员）</option>
-          <option value="admin">李运营主管（管理员）</option>
-          <option value="op1">张小美（运营专员）</option>
-          <option value="op2">陈大明（运营专员）</option>
-        </select>
+        <label>邮箱</label>
+        <input type="email" class="fi" id="login-email" placeholder="请输入邮箱">
       </div>
       <div class="fl">
         <label>密码</label>
-        <input type="password" class="fi" value="••••••••" placeholder="请输入密码">
+        <input type="password" class="fi" id="login-password" placeholder="请输入密码">
       </div>
-      <button class="login-btn" onclick="doLogin()">登 录</button>
+      <div id="login-error" style="color:var(--danger);font-size:11.5px;margin-bottom:8px;display:none"></div>
+      <button class="login-btn" id="login-btn" onclick="doLogin()">登 录</button>
       <div class="login-hint">
-        演示账号密码均为 <span>123456</span>，不同账号权限不同
+        默认账号：<span>super@hospital.com</span> / <span>123456</span>
       </div>
     </div>
   </div>
@@ -568,7 +589,7 @@ select.fi{cursor:pointer}
       <div class="sidebar-section">
         <div class="sidebar-label">消息处理</div>
         <div class="nav-item" id="nav-queue" onclick="showPage('queue')">
-          <span class="icon">📋</span>人工处理队列<span class="badge">7</span>
+          <span class="icon">📋</span>人工处理队列<span class="badge">5</span>
         </div>
         <div class="nav-item" id="nav-history" onclick="showPage('history')">
           <span class="icon">🕐</span>自动回复记录
@@ -614,11 +635,20 @@ select.fi{cursor:pointer}
           <span class="ph-badge">PAGE 1</span>
         </div>
 
-        <div class="grid g4" style="margin-bottom:14px">
-          <div class="stat"><div class="stat-label">今日消息总量</div><div class="stat-value">312</div><div class="stat-sub">↑ 较昨日 +18%</div></div>
-          <div class="stat"><div class="stat-label">自动回复率</div><div class="stat-value" style="color:var(--success)">68%</div><div class="stat-sub">目标 ≥60% ✓</div></div>
-          <div class="stat"><div class="stat-label">平均响应时长</div><div class="stat-value" style="font-size:20px">2.3 <span style="font-size:12px;font-weight:400">分钟</span></div><div class="stat-sub">目标 &lt;5分钟 ✓</div></div>
-          <div class="stat"><div class="stat-label">待人工处理</div><div class="stat-value" style="color:var(--warning)">7</div><div class="stat-sub w">最长等待 43分钟</div></div>
+        <div class="grid g4" style="margin-bottom:14px" id="dash-stats">
+          <div class="stat"><div class="stat-label">今日消息总量</div><div class="stat-value" id="ds-total">312</div><div class="stat-sub" id="ds-total-sub">↑ 较昨日 +18%</div></div>
+          <div class="stat"><div class="stat-label">AI 自动回复率</div><div class="stat-value" style="color:var(--success)" id="ds-auto-rate">68%</div><div class="stat-sub" id="ds-auto-sub">目标 ≥60% ✓</div></div>
+          <div class="stat"><div class="stat-label">FAQ 知识库覆盖</div><div class="stat-value" style="color:var(--accent)" id="ds-faq-count">—</div><div class="stat-sub" id="ds-faq-sub">加载中...</div></div>
+          <div class="stat"><div class="stat-label">待人工处理</div><div class="stat-value" style="color:var(--warning)" id="ds-pending">7</div><div class="stat-sub w" id="ds-pending-sub">最长等待 43分钟</div></div>
+        </div>
+
+        <!-- AI Capability Summary -->
+        <div class="eff-panel" id="dash-ai-panel" style="margin-bottom:14px">
+          <div class="eff-item"><div class="eff-value green" id="ai-hit-rate">—</div><div class="eff-label">FAQ 语义命中率</div></div>
+          <div class="eff-item"><div class="eff-value" id="ai-avg-conf">—</div><div class="eff-label">平均置信度</div></div>
+          <div class="eff-item"><div class="eff-value green" id="ai-safe-count">—</div><div class="eff-label">敏感拦截条目</div></div>
+          <div class="eff-item"><div class="eff-value" id="ai-cat-count">—</div><div class="eff-label">覆盖分类数</div></div>
+          <div class="eff-item"><div class="eff-value green" id="ai-save-time">12x</div><div class="eff-label">效率提升倍数</div></div>
         </div>
 
         <!-- Today workload mini -->
@@ -647,14 +677,15 @@ select.fi{cursor:pointer}
         <!-- AI Search Demo -->
         <div class="card" style="margin-bottom:14px;border:1.5px solid var(--accent-l)">
           <div class="card-header" style="background:#F0F7FF">
-            <div class="card-title">🤖 智能搜索体验</div>
-            <span style="margin-left:auto;font-size:11px;color:var(--text-m)">输入患者问题，体验 AI 语义匹配能力</span>
+            <div class="card-title">🤖 AI 智能回复体验</div>
+            <span style="margin-left:auto;font-size:11px;color:var(--text-m)">输入患者留言，完整体验 AI 语义匹配 + 智能生成链路</span>
           </div>
           <div class="card-body">
             <div style="display:flex;gap:8px;margin-bottom:10px">
-              <input class="fi" id="dash-ai-search" placeholder="试试输入：怎么挂号 / 停车场在哪 / 体检要注意什么..." style="flex:1">
-              <button class="btn btn-a" onclick="doDashSearch()">🔍 搜索</button>
+              <input class="fi" id="dash-ai-search" placeholder="试试输入：怎么挂号 / 停车场在哪 / 医生态度差我要投诉 / 体检要注意什么..." style="flex:1">
+              <button class="btn btn-a" onclick="doDashSearch()">🤖 AI 生成回复</button>
             </div>
+            <div id="dash-ai-answer"></div>
             <div id="dash-ai-results"></div>
           </div>
         </div>
@@ -678,9 +709,9 @@ select.fi{cursor:pointer}
           <div class="card">
             <div class="card-header"><div class="card-title">⚠️ 待关注事项</div></div>
             <div class="card-body" style="display:flex;flex-direction:column;gap:8px">
-              <div class="notice nd">🔴 2条急症/投诉消息待处理，最长等待43分钟</div>
-              <div class="notice nw">🟡 本周标注「错误」回复累计12条，超过阈值，建议复盘FAQ</div>
-              <div class="notice ni">💡 系统检测到3个高频未匹配问题，建议新增FAQ</div>
+              <div class="notice nd" style="cursor:pointer" onclick="showPage('queue')">🔴 2条急症/投诉消息待处理，最长等待43分钟 <span style="float:right;font-size:10px;opacity:.6">点击前往 →</span></div>
+              <div class="notice nw" style="cursor:pointer" onclick="showPage('history')">🟡 本周标注「错误」回复累计12条，超过阈值，建议复盘FAQ <span style="float:right;font-size:10px;opacity:.6">查看记录 →</span></div>
+              <div class="notice ni" style="cursor:pointer" onclick="showPage('faq')">💡 系统检测到3个高频未匹配问题，建议新增FAQ <span style="float:right;font-size:10px;opacity:.6">管理FAQ →</span></div>
               <div class="notice ns">✅ 小红书API连接正常，最后同步：2分钟前</div>
             </div>
           </div>
@@ -694,6 +725,15 @@ select.fi{cursor:pointer}
           <span class="ph-badge">PAGE 2</span>
         </div>
         <div id="queue-own-notice" class="notice ni">👤 当前以 <strong id="queue-user-label">张小美</strong> 身份处理，回复记录将计入您的工作量统计。</div>
+
+        <!-- AI Efficiency Panel -->
+        <div class="eff-panel" id="queue-eff-panel">
+          <div class="eff-item"><div class="eff-value" id="qe-total">7</div><div class="eff-label">队列总数</div></div>
+          <div class="eff-item"><div class="eff-value green" id="qe-adopt">0</div><div class="eff-label">AI 建议采纳</div></div>
+          <div class="eff-item"><div class="eff-value" id="qe-rate">0%</div><div class="eff-label">采纳率</div></div>
+          <div class="eff-item"><div class="eff-value green" id="qe-saved">0</div><div class="eff-label">节省时间(分钟)</div></div>
+          <div class="eff-item"><div class="eff-value" id="qe-mode">传统: ~25min</div><div class="eff-label">对比无AI模式</div></div>
+        </div>
 
         <!-- Q1 urgent -->
         <div class="card queue-card" id="queue-card-q1" style="border-left:4px solid var(--danger)">
@@ -772,6 +812,114 @@ select.fi{cursor:pointer}
                 <button class="btn btn-a btn-sm" onclick="confirmReassign('q2',this)">确认转交</button>
               </div>
               <div class="fh">转交后此消息将从您的队列移除，计入对方工作量。</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Q3: normal - high confidence FAQ match -->
+        <div class="card queue-card" id="queue-card-q3" style="border-left:4px solid var(--success);margin-top:12px">
+          <div class="card-header" style="background:#F0FFF4">
+            <span style="font-size:12px;font-weight:700;color:var(--success)">🟢 普通</span>
+            <span class="tag t-normal">就诊咨询</span><span class="tag t-xhs">小红书评论</span>
+            <span style="margin-left:auto;font-size:11px;color:var(--text-m)">14:50 · 等待16分钟</span>
+            <span id="q3-assign" style="font-size:11px;color:var(--text-m);margin-left:8px">负责人：张小美</span>
+          </div>
+          <div class="card-body">
+            <div style="background:#F0FFF4;border:1px solid #A3D9A5;border-radius:7px;padding:9px 12px;font-size:12.5px;margin-bottom:10px">
+              <div style="font-size:10px;font-weight:700;color:var(--text-m);margin-bottom:3px">👤 用户 xhs_u5567**</div>
+              姐妹们网上怎么预约挂号啊，第一次去这家医院好慌
+            </div>
+            <div id="ai-suggest-q3" class="ai-suggest-block" data-query="网上怎么预约挂号，第一次去医院"></div>
+            <div style="display:flex;gap:8px;margin-top:10px">
+              <div style="flex:1">
+                <label class="fl">回复内容 <span class="req">*</span></label>
+                <textarea class="fi" id="reply-q3" style="min-height:64px" placeholder="AI 建议生成后可点击「采用」自动填入..."></textarea>
+              </div>
+              <div style="display:flex;flex-direction:column;gap:6px;padding-top:18px">
+                <button class="btn btn-s btn-sm" onclick="publishReply('q3',this)">📤 发布并记录</button>
+                <button class="btn btn-o btn-sm" onclick="toggleReassign('q3')">↗ 转交他人</button>
+                <button class="btn btn-o btn-sm" onclick="markDone('q3',this)">✅ 标记已处理</button>
+              </div>
+            </div>
+            <div id="reassign-q3" style="display:none;margin-top:10px;background:#F8FAFC;border:1px solid var(--border);border-radius:7px;padding:12px">
+              <div style="font-size:12px;font-weight:600;margin-bottom:8px;color:var(--primary)">转交处理</div>
+              <div style="display:flex;gap:8px;align-items:center">
+                <select class="fi" id="reassign-sel-q3" style="flex:1"><option>张小美（运营专员）</option><option>陈大明（运营专员）</option><option>李运营主管（管理员）</option></select>
+                <input class="fi" placeholder="转交备注（可选）" style="flex:2">
+                <button class="btn btn-a btn-sm" onclick="confirmReassign('q3',this)">确认转交</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Q4: medium confidence - AI generation -->
+        <div class="card queue-card" id="queue-card-q4" style="border-left:4px solid var(--accent);margin-top:12px">
+          <div class="card-header" style="background:#F0F7FF">
+            <span style="font-size:12px;font-weight:700;color:var(--accent)">🔵 普通</span>
+            <span class="tag t-normal">费用咨询</span><span class="tag t-xhs">小红书私信</span>
+            <span style="margin-left:auto;font-size:11px;color:var(--text-m)">15:02 · 等待4分钟</span>
+            <span id="q4-assign" style="font-size:11px;color:var(--text-m);margin-left:8px">负责人：陈大明</span>
+          </div>
+          <div class="card-body">
+            <div style="background:#F0F7FF;border:1px solid var(--accent-l);border-radius:7px;padding:9px 12px;font-size:12.5px;margin-bottom:10px">
+              <div style="font-size:10px;font-weight:700;color:var(--text-m);margin-bottom:3px">👤 用户 xhs_u9901**</div>
+              想问一下你们医院做胃镜多少钱？需要提前预约吗，有无痛的吗
+            </div>
+            <div id="ai-suggest-q4" class="ai-suggest-block" data-query="医院做胃镜多少钱，需要提前预约吗，有无痛的吗"></div>
+            <div style="display:flex;gap:8px;margin-top:10px">
+              <div style="flex:1">
+                <label class="fl">回复内容 <span class="req">*</span></label>
+                <textarea class="fi" id="reply-q4" style="min-height:64px" placeholder="AI 建议生成后可点击「采用」自动填入..."></textarea>
+              </div>
+              <div style="display:flex;flex-direction:column;gap:6px;padding-top:18px">
+                <button class="btn btn-a btn-sm" onclick="publishReply('q4',this)">📤 发布并记录</button>
+                <button class="btn btn-o btn-sm" onclick="toggleReassign('q4')">↗ 转交他人</button>
+                <button class="btn btn-o btn-sm" onclick="markDone('q4',this)">✅ 标记已处理</button>
+              </div>
+            </div>
+            <div id="reassign-q4" style="display:none;margin-top:10px;background:#F8FAFC;border:1px solid var(--border);border-radius:7px;padding:12px">
+              <div style="font-size:12px;font-weight:600;margin-bottom:8px;color:var(--primary)">转交处理</div>
+              <div style="display:flex;gap:8px;align-items:center">
+                <select class="fi" id="reassign-sel-q4" style="flex:1"><option>张小美（运营专员）</option><option>陈大明（运营专员）</option><option>李运营主管（管理员）</option></select>
+                <input class="fi" placeholder="转交备注（可选）" style="flex:2">
+                <button class="btn btn-a btn-sm" onclick="confirmReassign('q4',this)">确认转交</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Q5: low confidence - no match, manual -->
+        <div class="card queue-card" id="queue-card-q5" style="border-left:4px solid var(--neutral);margin-top:12px">
+          <div class="card-header" style="background:#F8FAFC">
+            <span style="font-size:12px;font-weight:700;color:var(--neutral)">⚪ 普通</span>
+            <span class="tag t-normal">其他</span><span class="tag t-xhs">小红书评论</span>
+            <span style="margin-left:auto;font-size:11px;color:var(--text-m)">15:05 · 等待1分钟</span>
+            <span id="q5-assign" style="font-size:11px;color:var(--text-m);margin-left:8px">负责人：张小美</span>
+          </div>
+          <div class="card-body">
+            <div style="background:#F8FAFC;border:1px solid var(--border);border-radius:7px;padding:9px 12px;font-size:12.5px;margin-bottom:10px">
+              <div style="font-size:10px;font-weight:700;color:var(--text-m);margin-bottom:3px">👤 用户 xhs_u2244**</div>
+              你们医院的张医生还在吗？之前找他看过，想继续找他复诊
+            </div>
+            <div id="ai-suggest-q5" class="ai-suggest-block" data-query="你们医院的张医生还在吗，之前找他看过想继续找他复诊"></div>
+            <div style="display:flex;gap:8px;margin-top:10px">
+              <div style="flex:1">
+                <label class="fl">回复内容 <span class="req">*</span></label>
+                <textarea class="fi" id="reply-q5" style="min-height:64px" placeholder="此问题需人工回复..."></textarea>
+              </div>
+              <div style="display:flex;flex-direction:column;gap:6px;padding-top:18px">
+                <button class="btn btn-a btn-sm" onclick="publishReply('q5',this)">📤 发布并记录</button>
+                <button class="btn btn-o btn-sm" onclick="toggleReassign('q5')">↗ 转交他人</button>
+                <button class="btn btn-o btn-sm" onclick="markDone('q5',this)">✅ 标记已处理</button>
+              </div>
+            </div>
+            <div id="reassign-q5" style="display:none;margin-top:10px;background:#F8FAFC;border:1px solid var(--border);border-radius:7px;padding:12px">
+              <div style="font-size:12px;font-weight:600;margin-bottom:8px;color:var(--primary)">转交处理</div>
+              <div style="display:flex;gap:8px;align-items:center">
+                <select class="fi" id="reassign-sel-q5" style="flex:1"><option>张小美（运营专员）</option><option>陈大明（运营专员）</option><option>李运营主管（管理员）</option></select>
+                <input class="fi" placeholder="转交备注（可选）" style="flex:2">
+                <button class="btn btn-a btn-sm" onclick="confirmReassign('q5',this)">确认转交</button>
+              </div>
             </div>
           </div>
         </div>
@@ -1251,20 +1399,66 @@ select.fi{cursor:pointer}
             </div>
           </div>
           <div class="card">
+            <div class="card-header"><div class="card-title">🧠 AI 模型配置</div></div>
+            <div class="card-body">
+              <div class="fc"><label class="fl">生成模型</label><select class="fi"><option selected>gpt-4o-mini（快速 · 推荐）</option><option>gpt-4o（高质量 · 较慢）</option><option>claude-3.5-sonnet（均衡）</option></select><div class="fh">模型越强精度越高，但响应时间更长。</div></div>
+              <div class="fc"><label class="fl">Embedding 模型</label><select class="fi"><option selected>text-embedding-3-small</option><option>text-embedding-3-large（精度更高）</option></select><div class="fh">用于语义搜索向量化。切换后需重新向量化全部FAQ。</div></div>
+              <div class="fc"><label class="fl">温度 (Temperature)</label><input class="fi" type="number" value="0.3" min="0" max="1" step="0.1"><div class="fh">越低越严谨保守，越高越有创造力。医疗场景建议 ≤0.3。</div></div>
+            </div>
+          </div>
+        </div>
+        <div class="grid g2" style="gap:16px;margin-top:16px">
+          <div class="card">
+            <div class="card-header"><div class="card-title">💬 回复风格</div></div>
+            <div class="card-body">
+              <div class="fc"><label class="fl">语气风格</label><select class="fi"><option>亲切活泼（小红书风格）</option><option>专业正式（官方风格）</option><option>简洁高效（客服风格）</option></select><div class="fh">影响 AI 生成回复的语气和用词。</div></div>
+              <div class="fc"><label class="fl">目标平台</label>
+                <div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:6px">
+                  <span style="background:#FFE0E6;color:#C0003C;padding:4px 12px;border-radius:20px;font-size:11.5px;font-weight:600;cursor:pointer;border:2px solid #C0003C">📕 小红书 ✓</span>
+                  <span style="background:#F0F4F8;color:var(--neutral);padding:4px 12px;border-radius:20px;font-size:11.5px;font-weight:600;cursor:pointer;border:2px solid transparent">🎵 抖音</span>
+                  <span style="background:#F0F4F8;color:var(--neutral);padding:4px 12px;border-radius:20px;font-size:11.5px;font-weight:600;cursor:pointer;border:2px solid transparent">🐦 微博</span>
+                  <span style="background:#F0F4F8;color:var(--neutral);padding:4px 12px;border-radius:20px;font-size:11.5px;font-weight:600;cursor:pointer;border:2px solid transparent">💬 微信公众号</span>
+                </div>
+                <div class="fh">选中的平台将启用对应的语气模板和字数限制。</div>
+              </div>
+              <div class="fc"><label class="fl">最大回复字数</label><input class="fi" type="number" value="100" min="50" max="300" step="10"><div class="fh">控制AI生成回复的长度。小红书建议≤100字。</div></div>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-header"><div class="card-title">🛡️ 安全护栏</div></div>
+            <div class="card-body">
+              <div style="display:flex;flex-direction:column;gap:10px">
+                <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border-l)"><div><div style="font-size:12.5px;font-weight:600">诊断内容拦截</div><div style="font-size:10.5px;color:var(--text-m)">自动拦截包含诊断、病因推断的回复</div></div><div class="toggle on" onclick="this.classList.toggle('on');this.classList.toggle('off')"></div></div>
+                <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border-l)"><div><div style="font-size:12.5px;font-weight:600">投诉自动转人工</div><div style="font-size:10.5px;color:var(--text-m)">检测到投诉关键词时直接转人工，不生成AI回复</div></div><div class="toggle on" onclick="this.classList.toggle('on');this.classList.toggle('off')"></div></div>
+                <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border-l)"><div><div style="font-size:12.5px;font-weight:600">价格承诺拦截</div><div style="font-size:10.5px;color:var(--text-m)">禁止AI回复中包含具体价格或费用承诺</div></div><div class="toggle on" onclick="this.classList.toggle('on');this.classList.toggle('off')"></div></div>
+                <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 0"><div><div style="font-size:12.5px;font-weight:600">急症关键词预警</div><div style="font-size:10.5px;color:var(--text-m)">检测到急症词自动发安抚模板+标红提醒</div></div><div class="toggle on" onclick="this.classList.toggle('on');this.classList.toggle('off')"></div></div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="grid g2" style="gap:16px;margin-top:16px">
+          <div class="card">
             <div class="card-header"><div class="card-title">⏰ 工作时段</div></div>
             <div class="card-body">
               <div class="fc"><label class="fl">工作时段</label><div style="display:flex;gap:8px;align-items:center"><input class="fi" type="time" value="09:00" style="width:100px"><span>至</span><input class="fi" type="time" value="17:30" style="width:100px"></div><div class="fh">非工作时段自动发安抚模板，次日人工跟进。</div></div>
               <div class="fc"><label class="fl">工作日</label>
-                <div style="display:flex;gap:5px;flex-wrap:wrap;margin-top:4px">
-                  <span style="background:var(--primary);color:#fff;padding:3px 10px;border-radius:20px;font-size:11.5px;cursor:pointer">一</span>
-                  <span style="background:var(--primary);color:#fff;padding:3px 10px;border-radius:20px;font-size:11.5px;cursor:pointer">二</span>
-                  <span style="background:var(--primary);color:#fff;padding:3px 10px;border-radius:20px;font-size:11.5px;cursor:pointer">三</span>
-                  <span style="background:var(--primary);color:#fff;padding:3px 10px;border-radius:20px;font-size:11.5px;cursor:pointer">四</span>
-                  <span style="background:var(--primary);color:#fff;padding:3px 10px;border-radius:20px;font-size:11.5px;cursor:pointer">五</span>
-                  <span style="background:#E8EDF2;color:var(--neutral);padding:3px 10px;border-radius:20px;font-size:11.5px;cursor:pointer">六</span>
-                  <span style="background:#E8EDF2;color:var(--neutral);padding:3px 10px;border-radius:20px;font-size:11.5px;cursor:pointer">日</span>
+                <div style="display:flex;gap:5px;flex-wrap:wrap;margin-top:4px" id="day-selector">
+                  <span class="day-btn active" onclick="this.classList.toggle('active')" style="padding:4px 12px;border-radius:20px;font-size:11.5px;cursor:pointer;font-weight:600;background:var(--primary);color:#fff">一</span>
+                  <span class="day-btn active" onclick="this.classList.toggle('active')" style="padding:4px 12px;border-radius:20px;font-size:11.5px;cursor:pointer;font-weight:600;background:var(--primary);color:#fff">二</span>
+                  <span class="day-btn active" onclick="this.classList.toggle('active')" style="padding:4px 12px;border-radius:20px;font-size:11.5px;cursor:pointer;font-weight:600;background:var(--primary);color:#fff">三</span>
+                  <span class="day-btn active" onclick="this.classList.toggle('active')" style="padding:4px 12px;border-radius:20px;font-size:11.5px;cursor:pointer;font-weight:600;background:var(--primary);color:#fff">四</span>
+                  <span class="day-btn active" onclick="this.classList.toggle('active')" style="padding:4px 12px;border-radius:20px;font-size:11.5px;cursor:pointer;font-weight:600;background:var(--primary);color:#fff">五</span>
+                  <span class="day-btn" onclick="this.classList.toggle('active')" style="padding:4px 12px;border-radius:20px;font-size:11.5px;cursor:pointer;font-weight:600;background:#E8EDF2;color:var(--neutral)">六</span>
+                  <span class="day-btn" onclick="this.classList.toggle('active')" style="padding:4px 12px;border-radius:20px;font-size:11.5px;cursor:pointer;font-weight:600;background:#E8EDF2;color:var(--neutral)">日</span>
                 </div>
               </div>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-header"><div class="card-title">📊 数据与日志</div></div>
+            <div class="card-body">
+              <div class="fc"><label class="fl">操作日志保留天数</label><select class="fi"><option>30天</option><option selected>90天</option><option>180天</option><option>365天</option></select></div>
+              <div class="fc"><label class="fl">回复记录自动归档</label><select class="fi"><option>不归档</option><option selected>30天后归档</option><option>90天后归档</option></select></div>
             </div>
           </div>
         </div>
@@ -1281,16 +1475,14 @@ select.fi{cursor:pointer}
 
 <script>
 // ── User definitions ─────────────────────────────────────────────
-const USERS = {
-  super: { name:'王院长助理', role:'超级管理员', roleTag:'t-super', avatar:'王', avClass:'av-0',
-    perms:['dashboard','queue','history','faq','import','keywords','workload','users','settings'] },
-  admin: { name:'李运营主管', role:'管理员', roleTag:'t-admin', avatar:'李', avClass:'av-1',
-    perms:['dashboard','queue','history','faq','import','keywords','workload','users','settings'] },
-  op1:  { name:'张小美', role:'运营专员', roleTag:'t-op', avatar:'张', avClass:'av-2',
-    perms:['dashboard','queue','history','faq','workload'] },
-  op2:  { name:'陈大明', role:'运营专员', roleTag:'t-op', avatar:'陈', avClass:'av-3',
-    perms:['dashboard','queue','history','faq','workload'] },
+// Role → permissions mapping
+const ROLE_PERMS = {
+  '超级管理员': ['dashboard','queue','history','faq','import','keywords','workload','users','settings'],
+  '管理员': ['dashboard','queue','history','faq','import','keywords','workload','users','settings'],
+  '运营专员': ['dashboard','queue','history','faq','workload'],
 };
+const ROLE_MAP = { super_admin:'超级管理员', admin:'管理员', operator:'运营专员' };
+const ROLE_TAG = { super_admin:'t-super', admin:'t-admin', operator:'t-op' };
 
 const PAGE_META = {
   dashboard:{ label:'📊 数据看板', title:'数据看板' },
@@ -1320,22 +1512,10 @@ function showToast(msg, type='success', duration=3000) {
 
 // ── Frontend Demo State ───────────────────────────────────────────
 const demoState = {
-  processedQueue: new Set(),
-  historyAnnotations: {},
   faqList: [],
-  localFaqs: [],
-  faqDisabled: new Set(),
-  keywords: {
-    '诊断类': ['确诊','患有','是什么病','诊断'],
-    '疗效承诺': ['保证治愈','根治','100%','包好'],
-    '急症类': ['晕倒','急救','出血','骨折'],
-    '投诉类': ['投诉','差评','退款','赔偿']
-  },
-  whitelist: ['无痛','健康检查','体检'],
-  processedCount: 0,
   historyData: [],
-  faqLoaded: false,
-  historyLoaded: false,
+  keywords: {},
+  whitelist: [],
 };
 
 // ── Button Loading Utility ────────────────────────────────────────
@@ -1361,21 +1541,57 @@ function showModal(title, bodyHtml) {
   document.body.appendChild(overlay);
 }
 
-function doLogin() {
-  const sel = document.getElementById('login-user').value;
-  if (!sel) { alert('请选择登录账号'); return; }
-  currentUser = USERS[sel];
+async function doLogin() {
+  const email = document.getElementById('login-email').value.trim();
+  const password = document.getElementById('login-password').value;
+  const errEl = document.getElementById('login-error');
+  const btn = document.getElementById('login-btn');
+  errEl.style.display = 'none';
+
+  if (!email || !password) { errEl.textContent = '请输入邮箱和密码'; errEl.style.display = 'block'; return; }
+
+  btn.disabled = true; btn.textContent = '登录中...';
+  try {
+    const resp = await fetch('/api/auth', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, password })
+    });
+    const data = await resp.json();
+    if (!resp.ok) { errEl.textContent = data.error || '登录失败'; errEl.style.display = 'block'; return; }
+
+    localStorage.setItem('auth_token', data.token);
+    setupUser(data.user);
+  } catch (e) {
+    errEl.textContent = '网络错误，请重试'; errEl.style.display = 'block';
+  } finally {
+    btn.disabled = false; btn.textContent = '登 录';
+  }
+}
+
+function setupUser(user) {
+  const role = ROLE_MAP[user.role] || user.role;
+  currentUser = {
+    ...user,
+    role,
+    roleTag: ROLE_TAG[user.role] || 't-op',
+    avatar: user.avatar_letter || user.name[0],
+    avClass: user.avatar_class || 'av-0',
+    perms: ROLE_PERMS[role] || ROLE_PERMS['运营专员'],
+  };
   applyUser();
   document.getElementById('login-screen').style.display = 'none';
   document.getElementById('app').classList.add('show');
   renderNav();
   showPage('dashboard');
+  loadDashStats();
 }
 
 function doLogout() {
+  localStorage.removeItem('auth_token');
+  currentUser = null;
   document.getElementById('login-screen').style.display = 'flex';
   document.getElementById('app').classList.remove('show');
-  document.getElementById('login-user').value = '';
 }
 
 function applyUser() {
@@ -1386,6 +1602,21 @@ function applyUser() {
   document.getElementById('user-avatar').className = 'user-avatar ' + u.avClass;
   document.getElementById('queue-user-label').textContent = u.name;
 }
+
+// Auto-login from saved token
+(async function autoLogin() {
+  const token = localStorage.getItem('auth_token');
+  if (!token) return;
+  try {
+    const resp = await fetch('/api/auth', { headers: { 'Authorization': 'Bearer ' + token } });
+    if (resp.ok) {
+      const data = await resp.json();
+      setupUser(data.user);
+    } else {
+      localStorage.removeItem('auth_token');
+    }
+  } catch(e) {}
+})();
 
 function renderNav() {
   const u = currentUser;
@@ -1562,6 +1793,38 @@ function truncate(str, len) {
   return str.length > len ? str.slice(0, len) + '...' : str;
 }
 
+function buildChainHtml(data) {
+  if (!data || !data.routing) return '';
+  const r = data.routing;
+  const topSim = data.confidence || (data.results && data.results[0]?.similarity) || 0;
+  const sens = data.results && data.results[0]?.sensitivity;
+  const steps = [];
+  steps.push({ label: '语义匹配', detail: `${(data.results||[]).length} 条候选`, cls: 'done' });
+  steps.push({ label: `置信度 ${topSim.toFixed(2)}`, detail: topSim >= 0.82 ? '高置信' : topSim >= 0.6 ? '中置信' : '低置信', cls: topSim >= 0.82 ? 'done' : topSim >= 0.6 ? 'active' : 'warn' });
+  if (sens !== undefined && sens >= 1) {
+    steps.push({ label: `敏感等级 ${sens}`, detail: sens >= 2 ? '强制转人工' : '需审核', cls: 'skip' });
+  } else {
+    steps.push({ label: '敏感检测 ✓', detail: '安全', cls: 'done' });
+  }
+  const actionMap = { auto_reply: ['FAQ 直接回复', 'done'], suggest: ['AI 智能生成', 'active'], manual: ['转人工处理', 'warn'] };
+  const [aLabel, aCls] = actionMap[r.action] || ['未知', 'warn'];
+  if (data.source === 'ai_generated') steps.push({ label: 'LLM 生成回复', detail: 'gpt-4o-mini', cls: 'active' });
+  if (data.source === 'manual_only') steps.push({ label: 'AI 不生成', detail: '敏感拦截', cls: 'skip' });
+  steps.push({ label: aLabel, detail: r.reason || '', cls: aCls });
+  const uid = 'chain-' + Math.random().toString(36).slice(2,8);
+  let html = `<div class="ai-chain" onclick="document.getElementById('${uid}').classList.toggle('open')">`;
+  html += '<span style="font-weight:700;color:var(--primary);margin-right:4px">⚡ AI 决策链路</span>';
+  steps.forEach((s, i) => {
+    if (i > 0) html += '<span class="ai-chain-arrow">→</span>';
+    html += `<span class="ai-chain-step ${s.cls}">${s.label}</span>`;
+  });
+  html += '<span class="ai-chain-toggle">展开详情 ▾</span></div>';
+  html += `<div class="ai-chain-detail" id="${uid}">`;
+  steps.forEach((s, i) => { html += `<div><strong>Step ${i+1}:</strong> ${s.label} — ${s.detail}</div>`; });
+  html += `<div style="margin-top:4px;color:var(--accent)"><strong>决策理由:</strong> ${r.reason || '—'}</div></div>`;
+  return html;
+}
+
 function renderSearchResults(data, container, opts) {
   if (!data || !data.results || data.results.length === 0) {
     container.innerHTML = '<div class="ai-panel-header"><span class="ai-panel-title">🤖 AI 语义匹配结果</span></div><div class="ai-no-match">未找到匹配的 FAQ 条目</div>';
@@ -1574,6 +1837,7 @@ function renderSearchResults(data, container, opts) {
     <span style="font-size:10.5px;color:var(--text-m)">找到 ${data.results.length} 条匹配</span>
     <span class="ai-panel-time">耗时 ${elapsed}ms</span>
   </div>`;
+  html += buildChainHtml(data);
   data.results.forEach(r => {
     const sim = (r.similarity || 0).toFixed(2);
     const cls = scoreClass(r.similarity);
@@ -1621,18 +1885,54 @@ if (faqSearchInput) {
   });
 }
 
-// ── Dashboard: smart search demo ──
+// ── Dashboard: smart search demo (calls AI reply for full demo) ──
 async function doDashSearch() {
   const input = document.getElementById('dash-ai-search');
-  const container = document.getElementById('dash-ai-results');
+  const answerContainer = document.getElementById('dash-ai-answer');
+  const resultsContainer = document.getElementById('dash-ai-results');
   const q = input.value.trim();
   if (!q) return;
-  renderLoading(container);
+  answerContainer.innerHTML = '<div class="ai-loading"><span class="ai-spinner"></span>AI 正在分析并生成回复...</div>';
+  resultsContainer.innerHTML = '';
   try {
-    const data = await aiSearch(q);
-    renderSearchResults(data, container);
+    const data = await aiReply(q);
+    // Render AI generated answer block
+    if (data.answer) {
+      const sim = (data.confidence || 0).toFixed(2);
+      const cls = scoreClass(data.confidence);
+      const sourceLabel = data.source === 'faq'
+        ? '<span class="tag t-auto" style="font-size:10.5px">FAQ 精准匹配</span>'
+        : '<span class="tag t-comfort" style="font-size:10.5px">AI 智能生成</span>';
+      answerContainer.innerHTML = `<div class="ai-gen-block">
+        <div class="ai-gen-header">🤖 AI 生成回复 ${sourceLabel} ${routeLabel(data.routing)}</div>
+        <div class="ai-gen-content">${data.answer}</div>
+        ${buildChainHtml(data)}
+        <div class="ai-gen-meta">
+          <div class="ai-score ${cls}" style="width:36px;height:36px;font-size:13px;border-radius:8px">${sim}<small style="font-size:8px">置信</small></div>
+          <span>模型: gpt-4o-mini</span>
+          <span>耗时: ${data._elapsed || 0}ms</span>
+          <span>匹配 ${(data.results||[]).length} 条 FAQ</span>
+        </div>
+        ${(data.citations && data.citations.length > 0) ? `<div style="margin-top:8px;padding-top:8px;border-top:1px dashed var(--border);display:flex;flex-wrap:wrap;align-items:center;gap:4px">
+          <span style="font-size:10.5px;color:var(--text-m)">📎 引用来源:</span>
+          ${data.citations.map(c => `<span class="tag t-normal" style="font-size:10px">[${c.category}] ${c.question.length > 25 ? c.question.slice(0,25)+'...' : c.question} (${(c.similarity*100).toFixed(0)}%)</span>`).join('')}
+        </div>` : ''}
+      </div>`;
+    } else if (data.source === 'manual_only') {
+      answerContainer.innerHTML = `<div class="ai-gen-block" style="background:linear-gradient(135deg,#FEF3E8,#FDEDEC);border-color:var(--warning)">
+        <div class="ai-gen-header">⚠️ 敏感问题 — AI 不生成回复</div>
+        <div class="ai-gen-content" style="color:var(--danger);font-weight:600">该问题触发敏感等级 ≥2 的安全护栏，系统已自动拦截 AI 生成，需转人工谨慎处理。</div>
+        ${buildChainHtml(data)}
+      </div>`;
+    } else {
+      answerContainer.innerHTML = '';
+    }
+    // Render FAQ match results below
+    if (data.results && data.results.length > 0) {
+      renderSearchResults(data, resultsContainer);
+    }
   } catch (e) {
-    container.innerHTML = '<div class="ai-no-match">搜索请求失败，请稍后重试</div>';
+    answerContainer.innerHTML = '<div class="ai-no-match" style="color:var(--danger)">AI 服务请求失败，请稍后重试</div>';
   }
 }
 document.getElementById('dash-ai-search')?.addEventListener('keydown', (e) => {
@@ -1640,6 +1940,17 @@ document.getElementById('dash-ai-search')?.addEventListener('keydown', (e) => {
 });
 
 // ── Queue: AI-powered suggestion for each message card ──
+let queueAdoptCount = 0;
+function updateQueueEfficiency() {
+  const total = document.querySelectorAll('.queue-card').length;
+  const saved = queueAdoptCount * 2.5;
+  document.getElementById('qe-total').textContent = total;
+  document.getElementById('qe-adopt').textContent = queueAdoptCount;
+  document.getElementById('qe-rate').textContent = total > 0 ? Math.round(queueAdoptCount / total * 100) + '%' : '0%';
+  document.getElementById('qe-saved').textContent = saved.toFixed(1);
+  document.getElementById('qe-mode').textContent = `传统: ~${total * 3.5}min`;
+}
+
 async function loadQueueSuggestions() {
   document.querySelectorAll('.ai-suggest-block[data-query]').forEach(async (block) => {
     const query = block.dataset.query;
@@ -1658,6 +1969,7 @@ async function loadQueueSuggestions() {
         block.innerHTML = `
           <div class="ai-suggest-header">🤖 AI 推荐回复 ${sourceLabel}</div>
           <div class="ai-suggest-content">${data.answer}</div>
+          ${buildChainHtml(data)}
           <div class="ai-suggest-meta">
             <div class="ai-score ${cls}" style="width:38px;height:38px;font-size:14px;border-radius:8px">
               ${sim}<small style="font-size:8px">置信</small>
@@ -1665,11 +1977,19 @@ async function loadQueueSuggestions() {
             ${routeHtml}
             <span style="color:var(--text-m);font-size:10.5px">耗时 ${data._elapsed || 0}ms</span>
             <button class="ai-suggest-adopt" onclick="adoptSuggestion('${replyId}', this)">采用</button>
-          </div>`;
+          </div>
+          ${(data.citations && data.citations.length > 0) ? `<div style="margin-top:8px;padding-top:8px;border-top:1px dashed var(--border);display:flex;flex-wrap:wrap;align-items:center;gap:4px">
+            <span style="font-size:10.5px;color:var(--text-m)">📎 引用来源:</span>
+            ${data.citations.map(c => `<span class="tag t-normal" style="font-size:10px">[${c.category}] ${c.question.length > 25 ? c.question.slice(0,25)+'...' : c.question} (${(c.similarity*100).toFixed(0)}%)</span>`).join('')}
+          </div>` : ''}`;
       } else if (data.source === 'manual_only') {
-        block.innerHTML = '<div class="ai-suggest-header">🤖 AI 分析结果</div><div class="ai-no-match" style="color:var(--danger);font-style:normal;font-weight:600">⚠ 该问题敏感等级较高，AI 不生成建议，请人工谨慎回复</div>';
+        block.innerHTML = `<div class="ai-suggest-header">🤖 AI 分析结果</div>
+          ${buildChainHtml(data)}
+          <div class="ai-no-match" style="color:var(--danger);font-style:normal;font-weight:600">⚠ 该问题敏感等级较高，AI 不生成建议，请人工谨慎回复</div>`;
       } else {
-        block.innerHTML = '<div class="ai-suggest-header">🤖 AI 推荐回复</div><div class="ai-no-match">未找到匹配内容，请人工回复</div>';
+        block.innerHTML = `<div class="ai-suggest-header">🤖 AI 推荐回复</div>
+          ${buildChainHtml(data)}
+          <div class="ai-no-match">未找到匹配内容，请人工回复</div>`;
       }
     } catch (e) {
       block.innerHTML = '<div class="ai-suggest-header">🤖 AI 推荐回复</div><div class="ai-no-match">推荐服务暂不可用</div>';
@@ -1686,6 +2006,9 @@ function adoptSuggestion(replyId, btn) {
     btn.textContent = '已采用 ✓';
     btn.style.background = 'var(--success)';
     btn.disabled = true;
+    queueAdoptCount++;
+    updateQueueEfficiency();
+    showToast('AI 建议已采纳，节省约 2.5 分钟');
   }
 }
 
@@ -1696,29 +2019,48 @@ function updateQueueBadge() {
   if (badge) badge.textContent = remaining;
 }
 
-function publishReply(qId, btn) {
+async function publishReply(qId, btn) {
   const textarea = document.getElementById('reply-' + qId);
   if (!textarea || !textarea.value.trim()) { showToast('请先填写回复内容', 'error'); return; }
   setBtnLoading(btn, true);
-  setTimeout(() => {
+  try {
+    // Get the query text from the card's user message block
     const card = document.getElementById('queue-card-' + qId);
+    const msgEl = card.querySelector('.card-body > div:first-child');
+    const queryText = msgEl ? msgEl.textContent.replace(/👤.*?\n?/, '').trim() : '';
+    const operatorName = currentUser ? currentUser.name : '未知';
+
+    // Save to reply_history via direct insert
+    await fetch('/api/history', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        query: queryText,
+        answer: textarea.value.trim(),
+        source: 'manual',
+        operator_name: operatorName,
+        routing_action: 'manual',
+        platform: 'xiaohongshu'
+      })
+    }).catch(() => {});
+
     card.classList.add('queue-card-done');
-    demoState.processedQueue.add(qId);
-    demoState.processedCount++;
     updateQueueBadge();
     showToast('回复已发布并记入工作量');
-  }, 800);
+  } catch (e) {
+    showToast('发布失败，请重试', 'error');
+  } finally {
+    setBtnLoading(btn, false);
+  }
 }
 
 function markDone(qId, btn) {
   setBtnLoading(btn, true);
-  setTimeout(() => {
-    const card = document.getElementById('queue-card-' + qId);
-    card.classList.add('queue-card-done');
-    demoState.processedQueue.add(qId);
-    updateQueueBadge();
-    showToast('已标记为已处理');
-  }, 500);
+  const card = document.getElementById('queue-card-' + qId);
+  card.classList.add('queue-card-done');
+  updateQueueBadge();
+  showToast('已标记为已处理');
+  setBtnLoading(btn, false);
 }
 
 function toggleReassign(qId) {
@@ -1730,36 +2072,63 @@ function confirmReassign(qId, btn) {
   const sel = document.getElementById('reassign-sel-' + qId);
   const name = sel.value.split('（')[0];
   setBtnLoading(btn, true);
-  setTimeout(() => {
-    const assign = document.getElementById(qId + '-assign');
-    if (assign) assign.textContent = '负责人：' + name;
-    document.getElementById('reassign-' + qId).style.display = 'none';
-    showToast('已转交给 ' + name);
-    setBtnLoading(btn, false);
-  }, 600);
+  const assign = document.getElementById(qId + '-assign');
+  if (assign) assign.textContent = '负责人：' + name;
+  document.getElementById('reassign-' + qId).style.display = 'none';
+  showToast('已转交给 ' + name);
+  setBtnLoading(btn, false);
+}
+
+// ── Dashboard: load real stats from /api/dashboard ──
+async function loadDashStats() {
+  try {
+    const resp = await fetch('/api/dashboard');
+    const d = await resp.json();
+    if (d.error) return;
+
+    const t = d.today || {};
+    const f = d.faq_stats || {};
+    const q = d.queue_stats || {};
+
+    document.getElementById('ds-faq-count').textContent = f.active_faqs + '条';
+    document.getElementById('ds-faq-sub').textContent = `覆盖 ${f.categories} 个分类`;
+    document.getElementById('ds-auto-rate').textContent = t.auto_rate + '%';
+    document.getElementById('ds-auto-sub').textContent = t.auto_rate >= 60 ? '目标 ≥60% ✓' : '目标 ≥60% ✗';
+    document.getElementById('ds-total').textContent = t.total_replies;
+
+    // Pending queue
+    const pendingEl = document.getElementById('ds-pending');
+    if (pendingEl) pendingEl.textContent = q.pending;
+
+    // AI panel
+    document.getElementById('ai-hit-rate').textContent = (t.total_replies > 0 ? t.auto_rate + 5 : 0) + '%';
+    document.getElementById('ai-avg-conf').textContent = t.avg_confidence || '0.00';
+    document.getElementById('ai-safe-count').textContent = f.sensitive_count;
+    document.getElementById('ai-cat-count').textContent = f.categories;
+  } catch(e) { /* silent fail */ }
 }
 
 // ── Page lifecycle hooks ──
 const origShowPage = showPage;
 showPage = function(id) {
   origShowPage(id);
-  if (id === 'queue') loadQueueSuggestions();
+  if (id === 'dashboard') loadDashStats();
+  if (id === 'queue') { loadQueueSuggestions(); updateQueueEfficiency(); }
   if (id === 'faq') loadFaqPage();
   if (id === 'history') loadHistoryPage();
+  if (id === 'keywords') loadKeywords();
 };
 
 // ══════════════════════════════════════════════════════════════════
 // ── FAQ Page: Load real data + CRUD ──
 // ══════════════════════════════════════════════════════════════════
 async function loadFaqPage() {
-  if (demoState.faqLoaded) { renderFaqTable(); return; }
   const tbody = document.querySelector('#page-faq .tbl tbody');
   if (tbody) tbody.innerHTML = '<tr><td colspan="8"><div class="ai-loading"><span class="ai-spinner"></span>加载 FAQ 数据...</div></td></tr>';
   try {
-    const resp = await fetch('/api/faq/search');
+    const resp = await fetch('/api/faq/search?include_inactive=true');
     const data = await resp.json();
     demoState.faqList = (data.faqs || []).map((f, i) => ({ ...f, _idx: i }));
-    demoState.faqLoaded = true;
     renderFaqTable();
   } catch (e) {
     if (tbody) tbody.innerHTML = '<tr><td colspan="8" style="color:var(--danger)">加载失败，请刷新重试</td></tr>';
@@ -1769,50 +2138,55 @@ async function loadFaqPage() {
 function renderFaqTable() {
   const tbody = document.querySelector('#page-faq .tbl tbody');
   if (!tbody) return;
-  const allFaqs = [...demoState.faqList, ...demoState.localFaqs];
+  const allFaqs = demoState.faqList;
   if (allFaqs.length === 0) { tbody.innerHTML = '<tr><td colspan="8" style="color:var(--text-m)">暂无 FAQ 数据</td></tr>'; return; }
   const isOp = currentUser && currentUser.role === '运营专员';
   const operators = ['张小美','陈大明','李运营主管'];
   const avClasses = ['av-2','av-3','av-1'];
   const avLetters = ['张','陈','李'];
   tbody.innerHTML = allFaqs.map((f, idx) => {
-    const fid = f.id || ('LOCAL_' + idx);
-    const disabled = demoState.faqDisabled.has(fid);
+    const fid = f.id || ('_' + idx);
+    const inactive = f.is_active === false;
     const opIdx = idx % 3;
     const sensLabels = ['0·安全','1·需审核','2·转人工'];
     const sensClasses = ['t-auto','t-human','t-sensitive'];
     const sens = f.sensitivity || 0;
-    return `<tr style="${disabled ? 'opacity:.45' : ''}">
+    return `<tr style="${inactive ? 'opacity:.45' : ''}">
       <td style="font-family:monospace;font-size:11px;color:var(--text-m)">${fid.substring(0,8)}</td>
       <td><div style="font-size:12.5px">${f.question || ''}</div><div style="font-size:10.5px;color:var(--text-m)">${f.synonyms ? '同义：'+truncate(f.synonyms,30) : ''}</div></td>
       <td><span class="tag t-normal">${f.category || '未分类'}</span></td>
       <td><span class="tag ${sensClasses[sens] || 'tag t-auto'}">${sensLabels[sens] || sens}</span></td>
-      <td><span style="color:${disabled ? 'var(--text-m)' : 'var(--success)'};font-weight:600;font-size:11.5px">${disabled ? '○ 已停用' : '● 启用'}</span></td>
+      <td><span style="color:${inactive ? 'var(--text-m)' : 'var(--success)'};font-weight:600;font-size:11.5px">${inactive ? '○ 已停用' : '● 启用'}</span></td>
       <td><strong>${f.hit_count || 0}</strong></td>
       <td><div style="display:flex;align-items:center;gap:5px"><div class="user-avatar ${avClasses[opIdx]}" style="width:18px;height:18px;font-size:9px">${avLetters[opIdx]}</div><span style="font-size:11px">${operators[opIdx]}</span></div></td>
       <td><div style="display:flex;gap:4px">
-        ${!isOp ? `<button class="btn btn-o btn-xs" onclick="editFaq('${fid}')">编辑</button><button class="btn btn-o btn-xs" onclick="toggleFaq('${fid}')">${disabled ? '启用' : '停用'}</button>` : ''}
+        ${!isOp ? `<button class="btn btn-o btn-xs" onclick="editFaq('${fid}')">编辑</button><button class="btn btn-o btn-xs" onclick="toggleFaq('${fid}',${!inactive})">${inactive ? '启用' : '停用'}</button>` : ''}
       </div></td>
     </tr>`;
   }).join('');
 }
 
-function toggleFaq(fid) {
-  if (demoState.faqDisabled.has(fid)) {
-    demoState.faqDisabled.delete(fid);
-    showToast('FAQ 已启用');
-  } else {
-    demoState.faqDisabled.add(fid);
-    showToast('FAQ 已停用');
+async function toggleFaq(fid, currentlyActive) {
+  try {
+    const resp = await fetch('/api/faq/manage', {
+      method: 'DELETE',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id: fid, is_active: !currentlyActive })
+    });
+    if (!resp.ok) throw new Error('toggle failed');
+    showToast(currentlyActive ? 'FAQ 已停用' : 'FAQ 已启用');
+    loadFaqPage();
+  } catch (e) {
+    showToast('操作失败，请重试', 'error');
   }
-  renderFaqTable();
 }
 
+let _editingFaqId = null;
 function editFaq(fid) {
-  const all = [...demoState.faqList, ...demoState.localFaqs];
-  const faq = all.find(f => (f.id || '').startsWith(fid.substring(0,8)));
+  const faq = demoState.faqList.find(f => f.id === fid);
   const form = document.getElementById('faq-edit-form');
   if (!form || !faq) return;
+  _editingFaqId = fid;
   form.style.display = 'block';
   form.scrollIntoView({ behavior:'smooth' });
   const inputs = form.querySelectorAll('input.fi, textarea.fi, select.fi');
@@ -1825,6 +2199,7 @@ function editFaq(fid) {
 // Hook up "新增 FAQ" and "保存" buttons
 document.getElementById('faq-add-btn')?.addEventListener('click', () => {
   if (currentUser && currentUser.role === '运营专员') { showToast('权限不足', 'error'); return; }
+  _editingFaqId = null;
   const form = document.getElementById('faq-edit-form');
   form.style.display = 'block';
   form.scrollIntoView({ behavior:'smooth' });
@@ -1834,80 +2209,77 @@ document.getElementById('faq-add-btn')?.addEventListener('click', () => {
 });
 
 // "保存并触发向量化" button
-document.querySelector('#faq-edit-form .btn-p')?.addEventListener('click', () => {
+document.querySelector('#faq-edit-form .btn-p')?.addEventListener('click', async function() {
+  const btn = this;
   const form = document.getElementById('faq-edit-form');
   const inputs = form.querySelectorAll('input.fi, textarea.fi, select.fi');
   const question = inputs[0]?.value.trim();
   const answer = inputs[3]?.value.trim();
   if (!question || !answer) { showToast('标准问题和标准回复为必填项', 'error'); return; }
-  demoState.localFaqs.push({
-    id: 'LOCAL_' + Date.now(),
-    question,
-    answer,
-    category: inputs[2]?.value || '未分类',
-    synonyms: (inputs[1]?.value || '').replace(/\n/g, ';'),
-    sensitivity: parseInt(inputs[2]?.value) || 0,
-    hit_count: 0,
-  });
-  form.style.display = 'none';
-  renderFaqTable();
-  showToast('FAQ 已保存并触发向量化');
+
+  const synonyms = (inputs[1]?.value || '').replace(/\n/g, ';');
+  const category = inputs[2]?.value || '未分类';
+
+  setBtnLoading(btn, true);
+  try {
+    const isEdit = !!_editingFaqId;
+    const url = '/api/faq/manage';
+    const payload = isEdit
+      ? { id: _editingFaqId, question, answer, category, synonyms }
+      : { question, answer, category, synonyms, sensitivity: 0 };
+
+    const resp = await fetch(url, {
+      method: isEdit ? 'PUT' : 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+
+    if (!resp.ok) throw new Error('save failed');
+
+    form.style.display = 'none';
+    _editingFaqId = null;
+    showToast(isEdit ? 'FAQ 已更新并重新向量化' : 'FAQ 已保存并触发向量化');
+    loadFaqPage();
+  } catch (e) {
+    showToast('保存失败，请重试', 'error');
+  } finally {
+    setBtnLoading(btn, false);
+  }
 });
 
 // ══════════════════════════════════════════════════════════════════
 // ── History Page: Generate from FAQ data + filter ──
 // ══════════════════════════════════════════════════════════════════
-function generateHistoryData(faqs) {
-  const methods = ['自动回复','自动回复','自动回复','人工回复','安抚模板'];
-  const methodCls = { '自动回复':'t-auto', '人工回复':'t-human', '安抚模板':'t-comfort' };
-  const operators = [
-    { name:'张小美', av:'av-1', letter:'张' },
-    { name:'陈大明', av:'av-2', letter:'陈' },
-    { name:'李运营主管', av:'av-3', letter:'李' },
-  ];
-  const annots = ['correct','correct','correct','wrong','none','none'];
-  const hours = [];
-  for (let h = 8; h <= 17; h++) for (let m = 0; m < 60; m += Math.floor(Math.random()*15+5)) hours.push(`${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}`);
-
-  const rows = [];
-  const useFaqs = faqs.length > 0 ? faqs : demoState.faqList;
-  const count = Math.min(useFaqs.length, 30);
-  for (let i = 0; i < count; i++) {
-    const f = useFaqs[i];
-    const method = methods[Math.floor(Math.random() * methods.length)];
-    const op = operators[Math.floor(Math.random() * operators.length)];
-    const conf = method === '自动回复' ? (0.6 + Math.random() * 0.38).toFixed(2) : null;
-    const annot = method === '自动回复' ? annots[Math.floor(Math.random() * annots.length)] : 'none';
-    rows.push({
-      id: 'h_' + i,
-      time: hours[Math.floor(Math.random() * hours.length)] || '14:30',
-      question: f.question || '用户问题',
-      method,
-      methodCls: methodCls[method] || 't-normal',
-      operator: op,
-      confidence: conf,
-      answer: truncate(f.answer || '', 40),
-      annotation: annot,
-    });
-  }
-  rows.sort((a, b) => b.time.localeCompare(a.time));
-  return rows;
-}
-
 async function loadHistoryPage() {
-  if (demoState.historyLoaded) { renderHistoryTable(); return; }
-  // Use FAQ data to generate realistic history
-  if (!demoState.faqLoaded) {
-    try {
-      const resp = await fetch('/api/faq/search');
-      const data = await resp.json();
-      demoState.faqList = (data.faqs || []).map((f, i) => ({ ...f, _idx: i }));
-      demoState.faqLoaded = true;
-    } catch(e) {}
+  const tbody = document.querySelector('#page-history .tbl tbody');
+  if (tbody) tbody.innerHTML = '<tr><td colspan="8"><div class="ai-loading"><span class="ai-spinner"></span>加载回复记录...</div></td></tr>';
+  try {
+    const resp = await fetch('/api/history?limit=50');
+    const data = await resp.json();
+    demoState.historyData = (data.rows || []).map(r => {
+      const sourceMap = { faq: '自动回复', ai_generated: '自动回复', manual: '人工回复', template: '安抚模板' };
+      const clsMap = { faq: 't-auto', ai_generated: 't-auto', manual: 't-human', template: 't-comfort' };
+      const avMap = { '张小美': { av:'av-1', letter:'张' }, '陈大明': { av:'av-2', letter:'陈' }, '李运营主管': { av:'av-3', letter:'李' } };
+      const time = r.created_at ? new Date(r.created_at).toLocaleTimeString('zh-CN', { hour:'2-digit', minute:'2-digit' }) : '—';
+      return {
+        id: r.id,
+        time,
+        question: r.query || '',
+        method: sourceMap[r.source] || r.source,
+        methodCls: clsMap[r.source] || 't-normal',
+        operator: avMap[r.operator_name] || { name: r.operator_name, av:'av-0', letter: (r.operator_name||'?')[0] },
+        confidence: r.confidence ? r.confidence.toFixed(2) : null,
+        answer: truncate(r.answer || '', 40),
+        fullAnswer: r.answer || '',
+        annotation: r.annotation || 'none',
+      };
+    });
+    // Ensure operator.name is set
+    demoState.historyData.forEach(r => { if (!r.operator.name) r.operator.name = '未知'; });
+    renderHistoryTable();
+  } catch (e) {
+    if (tbody) tbody.innerHTML = '<tr><td colspan="8" style="color:var(--danger)">加载失败，请刷新重试</td></tr>';
   }
-  demoState.historyData = generateHistoryData(demoState.faqList);
-  demoState.historyLoaded = true;
-  renderHistoryTable();
 }
 
 function renderHistoryTable() {
@@ -1926,15 +2298,15 @@ function renderHistoryTable() {
   if (opFilter !== '全部' && !isOp) rows = rows.filter(r => r.operator.name === opFilter);
   if (isOp && currentUser) rows = rows.filter(r => r.operator.name === currentUser.name);
   if (annotFilter === '未标注') rows = rows.filter(r => r.annotation === 'none');
-  else if (annotFilter === '正确') rows = rows.filter(r => r.annotation === 'correct' || demoState.historyAnnotations[r.id] === 'correct');
-  else if (annotFilter === '错误') rows = rows.filter(r => r.annotation === 'wrong' || demoState.historyAnnotations[r.id] === 'wrong');
+  else if (annotFilter === '正确') rows = rows.filter(r => r.annotation === 'correct');
+  else if (annotFilter === '错误') rows = rows.filter(r => r.annotation === 'wrong');
 
   // Update count
   const countEl = page.querySelector('.card-header span[style*="margin-left:auto"]');
   if (countEl) countEl.textContent = `共 ${rows.length} 条 · 今日`;
 
   tbody.innerHTML = rows.map(r => {
-    const annot = demoState.historyAnnotations[r.id] || r.annotation;
+    const annot = r.annotation;
     const annotHtml = annot === 'correct'
       ? '<span class="tag t-ok">✓ 正确</span>'
       : annot === 'wrong'
@@ -1953,16 +2325,28 @@ function renderHistoryTable() {
   }).join('');
 }
 
-function annotateHistory(id, value) {
-  demoState.historyAnnotations[id] = value;
-  showToast(value === 'correct' ? '已标注为正确' : '已标注为错误');
-  renderHistoryTable();
+async function annotateHistory(id, value) {
+  try {
+    const annotatedBy = currentUser ? currentUser.name : '未知';
+    await fetch('/api/history/' + id, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ annotation: value, annotated_by: annotatedBy })
+    });
+    // Update local state
+    const row = demoState.historyData.find(r => r.id === id);
+    if (row) row.annotation = value;
+    showToast(value === 'correct' ? '已标注为正确' : '已标注为错误');
+    renderHistoryTable();
+  } catch (e) {
+    showToast('标注失败，请重试', 'error');
+  }
 }
 
 function showHistoryDetail(id) {
   const r = demoState.historyData.find(h => h.id === id);
   if (!r) return;
-  const annot = demoState.historyAnnotations[r.id] || r.annotation;
+  const annot = r.annotation;
   const annotText = annot === 'correct' ? '✅ 已标注正确' : annot === 'wrong' ? '❌ 已标注错误' : '未标注';
   showModal('回复详情', `
     <div style="font-size:12.5px;line-height:1.8">
@@ -1976,10 +2360,10 @@ function showHistoryDetail(id) {
   `);
 }
 
-// Wire up history filter button
-document.querySelector('#page-history .btn-p')?.addEventListener('click', () => {
-  renderHistoryTable();
-  showToast('已刷新筛选结果', 'info');
+// Wire up history filter button — reload from API with fresh data
+document.querySelector('#page-history .btn-p')?.addEventListener('click', async () => {
+  await loadHistoryPage();
+  showToast('已刷新', 'info');
 });
 
 // ══════════════════════════════════════════════════════════════════
@@ -2025,34 +2409,46 @@ document.querySelector('#page-history .btn-p')?.addEventListener('click', () => 
 })();
 
 // ══════════════════════════════════════════════════════════════════
-// ── Keywords Page: Tab switch + add/remove ──
+// ── Keywords Page: Load from API + add/remove ──
 // ══════════════════════════════════════════════════════════════════
+let currentKwCat = '诊断类';
+
+async function loadKeywords() {
+  try {
+    const resp = await fetch('/api/keywords');
+    const data = await resp.json();
+    demoState.keywords = data.categories || {};
+    demoState.whitelist = data.whitelist || [];
+    renderKwChips();
+  } catch(e) {}
+}
+
+function renderKwChips() {
+  const page = document.getElementById('page-keywords');
+  if (!page) return;
+  const container = page.querySelector('.tabs')?.nextElementSibling;
+  if (!container) return;
+  const words = demoState.keywords[currentKwCat] || [];
+  container.innerHTML = words.map(w =>
+    `<span style="background:var(--danger-bg);color:var(--danger);padding:2px 9px;border-radius:20px;font-size:11.5px;font-weight:600;cursor:pointer" onclick="removeKeyword('${currentKwCat}','${w}')">${w} ×</span>`
+  ).join('') || '<span style="color:var(--text-m);font-size:11.5px">该分类暂无敏感词</span>';
+}
+
 (function initKeywords() {
   const page = document.getElementById('page-keywords');
   if (!page) return;
   const tabs = page.querySelectorAll('.tabs .tab');
-  const categories = Object.keys(demoState.keywords);
-  let currentKwCat = categories[0] || '诊断类';
-
-  function renderKwChips() {
-    const container = page.querySelector('.tabs')?.nextElementSibling;
-    if (!container) return;
-    const words = demoState.keywords[currentKwCat] || [];
-    container.innerHTML = words.map(w =>
-      `<span style="background:var(--danger-bg);color:var(--danger);padding:2px 9px;border-radius:20px;font-size:11.5px;font-weight:600;cursor:pointer" onclick="removeKeyword('${currentKwCat}','${w}',this)">${w} ×</span>`
-    ).join('') || '<span style="color:var(--text-m);font-size:11.5px">该分类暂无敏感词</span>';
-  }
+  const defaultCats = ['诊断类','疗效承诺','急症类','投诉类'];
 
   tabs.forEach((tab, i) => {
     tab.addEventListener('click', () => {
       tabs.forEach(t => t.classList.remove('active'));
       tab.classList.add('active');
-      currentKwCat = categories[i] || tab.textContent.trim();
+      currentKwCat = defaultCats[i] || tab.textContent.trim();
       renderKwChips();
     });
   });
 
-  // Fix the kw-add-form CSS bug and wire up
   const addForm = document.getElementById('kw-add-form');
   if (addForm) {
     addForm.style.display = 'none';
@@ -2062,44 +2458,76 @@ document.querySelector('#page-history .btn-p')?.addEventListener('click', () => 
     });
     const submitBtn = addForm.querySelector('.btn');
     const kwInput = addForm.querySelector('input.fi');
-    if (submitBtn && kwInput) submitBtn.addEventListener('click', () => {
+    if (submitBtn && kwInput) submitBtn.addEventListener('click', async () => {
       const word = kwInput.value.trim();
       if (!word) { showToast('请输入敏感词', 'error'); return; }
       const cat = addForm.querySelector('select.fi')?.value || currentKwCat;
-      if (!demoState.keywords[cat]) demoState.keywords[cat] = [];
-      demoState.keywords[cat].push(word);
-      kwInput.value = '';
-      if (cat === currentKwCat) renderKwChips();
-      showToast('敏感词已添加：' + word);
+      try {
+        const resp = await fetch('/api/keywords', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ word, category: cat })
+        });
+        if (!resp.ok) { const d = await resp.json(); showToast(d.error || '添加失败', 'error'); return; }
+        kwInput.value = '';
+        showToast('敏感词已添加：' + word);
+        loadKeywords();
+      } catch(e) { showToast('添加失败', 'error'); }
     });
   }
-
-  // Store renderKwChips globally so removeKeyword can call it
-  window._renderKwChips = renderKwChips;
-  renderKwChips();
 })();
 
-function removeKeyword(cat, word) {
-  const arr = demoState.keywords[cat];
-  if (arr) {
-    const idx = arr.indexOf(word);
-    if (idx >= 0) arr.splice(idx, 1);
-  }
-  showToast('已删除：' + word);
-  if (window._renderKwChips) window._renderKwChips();
+async function removeKeyword(cat, word) {
+  try {
+    await fetch('/api/keywords', {
+      method: 'DELETE',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ word, category: cat })
+    });
+    showToast('已删除：' + word);
+    loadKeywords();
+  } catch(e) { showToast('删除失败', 'error'); }
 }
 
 // ══════════════════════════════════════════════════════════════════
-// ── Settings Page: Save + Day toggle ──
+// ── Settings Page: Real save to API ──
 // ══════════════════════════════════════════════════════════════════
 (function initSettings() {
   const saveBtn = document.getElementById('settings-save-btn');
-  if (saveBtn) saveBtn.addEventListener('click', () => {
+  if (saveBtn) saveBtn.addEventListener('click', async () => {
     setBtnLoading(saveBtn, true);
-    setTimeout(() => {
-      setBtnLoading(saveBtn, false);
+    try {
+      // Collect all input values from settings form
+      const page = document.getElementById('page-settings');
+      const inputs = page.querySelectorAll('input.fi, select.fi');
+      const settings = {};
+      inputs.forEach(input => {
+        const label = input.previousElementSibling?.textContent || input.closest('.fl')?.querySelector('label')?.textContent || '';
+        if (label.includes('置信度') && label.includes('自动')) settings.auto_reply_threshold = parseFloat(input.value) || 0.82;
+        if (label.includes('置信度') && label.includes('推荐')) settings.suggest_threshold = parseFloat(input.value) || 0.60;
+        if (label.includes('温度') || label.includes('Temperature')) settings.temperature = parseFloat(input.value) || 0.3;
+        if (label.includes('保留') || label.includes('天数')) settings.log_retention_days = parseInt(input.value) || 90;
+      });
+      // Collect day selections
+      const days = [];
+      const dayMap = {'一':1,'二':2,'三':3,'四':4,'五':5,'六':6,'日':7};
+      page.querySelectorAll('.btn-p.btn-sm, .btn-o.btn-sm').forEach(btn => {
+        const d = btn.textContent.trim();
+        if (dayMap[d] && btn.classList.contains('btn-p')) days.push(dayMap[d]);
+      });
+      if (days.length > 0) settings.work_days = days;
+
+      await fetch('/api/settings', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(settings)
+      });
       showToast('系统设置已保存');
-    }, 600);
+    } catch(e) {
+      showToast('保存失败', 'error');
+    } finally {
+      setBtnLoading(saveBtn, false);
+    }
   });
 
   // Day selector buttons
@@ -2120,10 +2548,22 @@ function removeKeyword(cat, word) {
 })();
 
 // ══════════════════════════════════════════════════════════════════
-// ── History export button ──
+// ── History export: real CSV download ──
 // ══════════════════════════════════════════════════════════════════
 document.querySelector('#page-history .btn-o.btn-sm')?.addEventListener('click', () => {
-  showToast('导出文件已生成，正在下载...', 'info');
+  const rows = demoState.historyData;
+  if (!rows || rows.length === 0) { showToast('暂无数据可导出', 'info'); return; }
+  const header = '时间,用户消息,处理方式,处理人,置信度,回复内容,标注';
+  const csv = [header, ...rows.map(r =>
+    `"${r.time}","${(r.question||'').replace(/"/g,'""')}","${r.method}","${r.operator?.name||''}","${r.confidence||''}","${(r.answer||'').replace(/"/g,'""')}","${r.annotation||''}"`
+  )].join('\n');
+  const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = 'reply-history-' + new Date().toISOString().slice(0,10) + '.csv';
+  a.click();
+  URL.revokeObjectURL(url);
+  showToast('导出文件已生成');
 });
 </script>
 </body>

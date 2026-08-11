@@ -1,80 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getEmbedding } from "@/lib/openrouter";
 import { createServiceClient } from "@/lib/supabase";
+import { determineRouting } from "@/lib/routing";
+import type { FaqMatch } from "@/lib/routing";
 
 // ---------------------------------------------------------------------------
 // POST /api/faq/search — 语义搜索 FAQ，返回匹配结果 + 路由决策
 // ---------------------------------------------------------------------------
-
-interface FaqMatch {
-  id: string;
-  question: string;
-  answer: string;
-  category: string;
-  synonyms: string;
-  sensitivity: number;
-  similarity: number;
-  hit_count: number;
-}
-
-interface Routing {
-  action: "auto_reply" | "suggest" | "manual";
-  confidence: number;
-  reason: string;
-}
-
-function determineRouting(results: FaqMatch[]): Routing {
-  if (results.length === 0) {
-    return {
-      action: "manual",
-      confidence: 0,
-      reason: "未找到匹配的 FAQ",
-    };
-  }
-
-  const top = results[0];
-
-  // sensitivity >= 2 → 必须转人工，无论相似度多高
-  if (top.sensitivity >= 2) {
-    return {
-      action: "manual",
-      confidence: top.similarity,
-      reason: "该问题敏感等级较高，需转人工处理",
-    };
-  }
-
-  // sensitivity == 1 → 需要审核，降级为 suggest
-  if (top.sensitivity === 1) {
-    return {
-      action: "suggest",
-      confidence: top.similarity,
-      reason: "该问题需人工审核后回复",
-    };
-  }
-
-  // sensitivity == 0 的情况，按相似度判断
-  if (top.similarity >= 0.82) {
-    return {
-      action: "auto_reply",
-      confidence: top.similarity,
-      reason: "高置信度匹配，可自动回复",
-    };
-  }
-
-  if (top.similarity >= 0.6) {
-    return {
-      action: "suggest",
-      confidence: top.similarity,
-      reason: "中等置信度匹配，推荐候选答案供参考",
-    };
-  }
-
-  return {
-    action: "manual",
-    confidence: top.similarity,
-    reason: "置信度不足，建议转人工处理",
-  };
-}
 
 export async function POST(request: NextRequest) {
   try {
@@ -122,14 +54,23 @@ export async function POST(request: NextRequest) {
 // GET /api/faq/search — 获取全部 FAQ 列表（FAQ 管理页使用）
 // ---------------------------------------------------------------------------
 
-export async function GET() {
+export async function GET(request: NextRequest) {
   try {
+    const url = new URL(request.url);
+    const includeInactive = url.searchParams.get("include_inactive") === "true";
+
     const supabase = createServiceClient();
-    const { data, error } = await supabase
+    let query = supabase
       .from("faqs")
-      .select("id, question, answer, category, synonyms, sensitivity, hit_count")
+      .select("id, question, answer, category, synonyms, sensitivity, hit_count, is_active")
       .order("category")
       .order("hit_count", { ascending: false });
+
+    if (!includeInactive) {
+      query = query.eq("is_active", true);
+    }
+
+    const { data, error } = await query;
 
     if (error) {
       console.error("GET faqs error:", error);

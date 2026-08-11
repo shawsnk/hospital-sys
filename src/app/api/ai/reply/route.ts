@@ -22,7 +22,11 @@ const SYSTEM_PROMPT = `你是一家三甲医院的社交媒体智能回复助手
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { query } = body as { query?: string };
+    const { query, auto_save, operator_name } = body as {
+      query?: string;
+      auto_save?: boolean;
+      operator_name?: string;
+    };
 
     if (!query || typeof query !== "string" || query.trim().length === 0) {
       return NextResponse.json(
@@ -62,17 +66,34 @@ export async function POST(request: NextRequest) {
         confidence: routing.confidence,
         routing,
         results: results.slice(0, 3),
+        citations: [],
       });
     }
 
     // High confidence FAQ match → return FAQ answer directly
     if (routing.action === "auto_reply") {
+      if (auto_save) {
+        const supabase2 = createServiceClient();
+        await supabase2.from("reply_history").insert({
+          query: trimmed,
+          answer: results[0].answer,
+          source: "faq",
+          confidence: results[0].similarity,
+          faq_id: results[0].id,
+          routing_action: "auto_reply",
+          operator_name: operator_name || "系统自动",
+          platform: "xiaohongshu",
+        }).then(({ error }) => {
+          if (error) console.error("auto_save reply_history error:", error);
+        });
+      }
       return NextResponse.json({
         source: "faq",
         answer: results[0].answer,
         confidence: results[0].similarity,
         routing,
         results: results.slice(0, 3),
+        citations: [{ faq_id: results[0].id, question: results[0].question, category: results[0].category, similarity: results[0].similarity }],
       });
     }
 
@@ -85,7 +106,7 @@ export async function POST(request: NextRequest) {
       : "（无匹配的FAQ条目）";
 
     const userPrompt = results.length > 0
-      ? `以下是知识库中相关的FAQ供参考：\n\n${faqContext}\n\n用户留言：${trimmed}\n\n请基于以上FAQ内容，生成一条合适的回复。如果FAQ内容不够相关，可以基于医院常识回复，但必须遵守安全规则。`
+      ? `以下是知识库中相关的FAQ供参考：\n\n${faqContext}\n\n用户留言：${trimmed}\n\n请基于以上FAQ内容，生成一条合适的回复。请在回复中用 [1]、[2] 等标注引用了哪条FAQ。如果FAQ内容不够相关，可以基于医院常识回复，但必须遵守安全规则。`
       : `用户留言：${trimmed}\n\n知识库中没有直接相关的FAQ。请基于医院常识生成一条安全、得体的回复。`;
 
     const aiReply = await chatCompletion([
@@ -93,12 +114,46 @@ export async function POST(request: NextRequest) {
       { role: "user", content: userPrompt },
     ]);
 
+    // Parse citation markers [1], [2], etc. from AI reply
+    const citationPattern = /\[(\d+)\]/g;
+    const citedIndices = new Set<number>();
+    let m;
+    while ((m = citationPattern.exec(aiReply || "")) !== null) {
+      const idx = parseInt(m[1], 10) - 1;
+      if (idx >= 0 && idx < Math.min(results.length, 3)) {
+        citedIndices.add(idx);
+      }
+    }
+    const citations = Array.from(citedIndices).map(i => ({
+      faq_id: results[i].id,
+      question: results[i].question,
+      category: results[i].category,
+      similarity: results[i].similarity,
+    }));
+
+    if (auto_save && aiReply) {
+      const supabase2 = createServiceClient();
+      await supabase2.from("reply_history").insert({
+        query: trimmed,
+        answer: aiReply,
+        source: "ai_generated",
+        confidence: routing.confidence,
+        faq_id: results.length > 0 ? results[0].id : null,
+        routing_action: routing.action,
+        operator_name: operator_name || "系统自动",
+        platform: "xiaohongshu",
+      }).then(({ error }) => {
+        if (error) console.error("auto_save reply_history error:", error);
+      });
+    }
+
     return NextResponse.json({
       source: "ai_generated",
       answer: aiReply,
       confidence: routing.confidence,
       routing,
       results: results.slice(0, 3),
+      citations,
     });
   } catch (err) {
     console.error("POST /api/ai/reply error:", err);
